@@ -1,0 +1,238 @@
+"""Dames Point, the poster layout: what it holds, that every journey completes, that nothing drifts."""
+
+import importlib.util
+import json
+import struct
+from pathlib import Path
+
+import networkx as nx
+import pytest
+from matplotlib.colors import to_rgb
+from matplotlib.figure import Figure
+from matplotlib.quiver import Quiver
+
+from terminal_layout.graph import build_graph
+from terminal_layout.render import COLORS, _legend, render_2d
+
+PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+BLOCK_IDS = (
+    [f"{row}{col}" for row in "ABCDE" for col in "123"]  # south-east yard, full rows
+    + ["F2", "F3", "G2", "G3"]  # the bottom-left corner is cut by the highway ramp
+    + [f"H{n}" for n in range(1, 5)]  # strip yard along the apron
+    + [f"N{n}" for n in range(1, 5)]  # north-west yard
+)
+RTG_CLUSTERS = {
+    "RTG1": ["A1", "B1", "C1", "D1", "E1"],
+    "RTG2": ["A2", "B2", "C2", "D2", "E2"],
+    "RTG3": ["A3", "B3", "C3", "D3", "E3"],
+    "RTG4": ["F2", "F3", "G2", "G3"],
+    "RTG5": ["H1", "H2", "H3", "H4"],
+    "RTG6": ["N1", "N2", "N3", "N4"],
+}
+MAX_LEG = 250  # moves; a gross detour (a closed road, a loop gone wrong) shows up far above this
+
+
+def load_generator():
+    path = Path(__file__).resolve().parent.parent / "tools" / "build_dames_point.py"
+    spec = importlib.util.spec_from_file_location("build_dames_point", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def png_size(path):
+    data = path.read_bytes()
+    assert data[:8] == PNG_MAGIC, path
+    return struct.unpack(">II", data[16:24])
+
+
+# ---- what it holds -----------------------------------------------------------
+
+
+def test_size_and_name(dames):
+    assert (dames.name, dames.width, dames.height, dames.cell_size_m) == ("dames-point", 112, 43, 15)
+    assert dames.warnings == ()
+
+
+def test_six_quay_cranes_evenly_spaced_on_one_berth(dames):
+    assert list(dames.berths) == ["B1"]
+    cranes = dames.berths["B1"]
+    assert [c for c, _ in cranes] == [f"QC{n}" for n in range(1, 7)]
+    xs = [pos[0] for _, pos in cranes]
+    assert xs == [14, 31, 48, 65, 82, 99]
+    assert {pos[1] for _, pos in cranes} == {34}
+    assert len({b - a for a, b in zip(xs, xs[1:])}) == 1  # one gap, 17 cells = 255 m
+
+
+def test_berth_is_100_cells_of_the_real_1525_m(dames):
+    assert len(dames.cells("berth")) == 100  # 1,500 m of the real 1,525 m
+    assert len(dames.quay_cells("B1")) == 100
+
+
+def test_blocks_slots_and_bays(dames):
+    assert sorted(dames.blocks) == sorted(BLOCK_IDS) and len(BLOCK_IDS) == 27
+    assert sum(len(dames.slots_in_block(b)) for b in dames.blocks) == 786
+    assert len(dames.cells("yard_slot")) == 786
+    bays = sum(block.bays for block in dames.blocks.values())
+    assert bays == 419 == len(dames.cells("transfer_point")) - 6  # one transfer point per bay, one per crane
+    assert {block.max_tier for block in dames.blocks.values()} == {5}
+
+
+def test_six_yard_cranes_each_serve_a_cluster_of_blocks(dames):
+    served = {}
+    for block in dames.blocks.values():
+        served.setdefault(block.crane, []).append(block.id)
+    assert {crane: sorted(ids) for crane, ids in served.items()} == RTG_CLUSTERS
+
+
+def test_two_gate_in_lanes_and_two_gate_out_lanes(dames):
+    assert [(c.attrs["id"], c.pos) for c in dames.gate_cells("in")] == [("G_IN1", (80, 0)), ("G_IN2", (81, 0))]
+    assert [(c.attrs["id"], c.pos) for c in dames.gate_cells("out")] == [("G_OUT1", (84, 0)), ("G_OUT2", (85, 0))]
+
+
+def test_marsh_and_gate_complex_are_blocked_with_a_reason(dames):
+    assert (dames.cell(70, 20).type, dames.cell(70, 20).attrs["reason"]) == ("blocked", "exclusion")
+    assert (dames.cell(80, 8).type, dames.cell(80, 8).attrs["reason"]) == ("blocked", "building")
+
+
+def test_the_forks_and_aisles_the_trip_lengths_depend_on(dames):
+    """Design pins: the quay forks south, the northbound aisles, the east branch to the north-west yard."""
+    for x in (57, 86, 96, 104):
+        assert dames.exits(x, 34) == ["E", "S"], x
+    assert dames.exits(40, 34) == ["E"]
+    for x in (18, 36):
+        assert dames.exits(x, 20) == ["N"], x
+        assert dames.exits(x, 32) == ["N", "E"], x
+    assert dames.exits(88, 32) == ["E", "S"]
+
+
+# ---- journeys ---------------------------------------------------------------
+
+
+def test_no_trip_between_a_gate_a_crane_and_a_bay_is_longer_than_250_moves(dames):
+    """Every leg in both directions: gate in -> bay, bay -> gate out, crane <-> bay, gate <-> crane."""
+    graph = build_graph(dames)
+    cranes = [pos for _, pos in dames.berths["B1"]]
+    gates_in = [c.pos for c in dames.gate_cells("in")]
+    gates_out = [c.pos for c in dames.gate_cells("out")]
+    bays = [p for block in dames.blocks.values() for p in block.transfer_points]
+    assert len(bays) == 419
+    legs = []  # (from, to, moves)
+    for source in gates_in + cranes:
+        reach = nx.single_source_shortest_path_length(graph, source)
+        legs += [(source, t, reach.get(t)) for t in bays + cranes + gates_out if t != source]
+    backward = graph.reverse(copy=False)
+    for target in gates_out + cranes:
+        reach = nx.single_source_shortest_path_length(backward, target)
+        legs += [(s, target, reach.get(s)) for s in bays if s != target]
+    missing = [leg for leg in legs if leg[2] is None]
+    assert not missing, missing[:3]
+    longest = max(legs, key=lambda leg: leg[2])
+    assert longest[2] <= MAX_LEG, longest
+
+
+def test_a_crane_reaches_the_block_beside_it_without_circling_the_site(dames):
+    """The quay lane flows east, so the way down to the yard is a fork onto the apron lane (y = 33).
+
+    Without the fork at x = 57 this trip is 166 moves instead of 108.
+    """
+    qc1 = dict(dames.berths["B1"])["QC1"]
+    a1 = dames.blocks["A1"].transfer_points
+    assert len(dames.shortest_path(qc1, a1[0])) - 1 < 150
+    assert len(dames.shortest_path(a1[0], qc1)) - 1 < 60  # back by the west column
+
+
+def test_gate_in_to_gate_out_is_a_short_hop(dames):
+    assert len(dames.shortest_path((80, 0), (84, 0))) - 1 < 100
+
+
+def test_north_west_yard_is_reached_without_circling_the_site(dames):
+    """The east branch of the outbound road (y = 32) feeds it; without that branch the way in is over 200 moves."""
+    for block_id in ("N1", "N4"):
+        point = dames.blocks[block_id].transfer_points[0]
+        assert len(dames.shortest_path((80, 0), point)) - 1 < 100
+
+
+@pytest.mark.parametrize("cell", [(80, 3), (40, 34)])
+def test_closing_a_road_cell_is_reported_as_a_warning(dames, cell):
+    closed = dames.with_closures({cell})
+    assert closed.warnings and all(w.startswith("rule 12:") for w in closed.warnings)
+    assert dames.warnings == ()
+
+
+# ---- the files ----------------------------------------------------------------
+
+
+def test_compiled_file_is_up_to_date(dames, dames_path, tmp_path):
+    compiled_path = dames_path.with_name("dames-point.compiled.json")
+    assert json.loads(compiled_path.read_text()) == dames.to_json()
+    again = tmp_path / "again.json"
+    dames.to_json(again)
+    assert again.read_text() == compiled_path.read_text()
+
+
+def test_files_are_what_the_generator_writes(dames_path, tmp_path, capsys):
+    """The layout files are generated; a hand edit would be lost the next time the script runs."""
+    module = load_generator()
+    assert module.main(["build_dames_point.py", str(tmp_path / "dames-point.json")]) == 0
+    assert capsys.readouterr().out.strip().endswith(", 0 warnings")
+    for name in ("dames-point.json", "dames-point.compiled.json"):
+        assert (tmp_path / name).read_text(encoding="utf-8") == (dames_path.parent / name).read_text(
+            encoding="utf-8"
+        ), f"layouts/{name} differs from tools/build_dames_point.py: edit the script and run it"
+
+
+def test_a_layout_that_does_not_load_writes_nothing(tmp_path, capsys):
+    module = load_generator()
+    module.QUAY_FORKS = []  # leaves the east end of the apron lane with nothing feeding it: rule 6
+    out = tmp_path / "broken.json"
+    assert module.main(["build_dames_point.py", str(out)]) == 1
+    assert list(tmp_path.iterdir()) == []
+    assert "rule 6" in capsys.readouterr().out
+
+
+# ---- the pictures -------------------------------------------------------------
+
+
+def test_render_draws_every_block_crane_gate_and_exit(dames):
+    fig = Figure()
+    ax = fig.add_subplot(111)
+    render_2d(dames.to_json(), ax=ax)
+    labels = {t.get_text() for t in ax.texts}
+    assert set(BLOCK_IDS) <= labels
+    assert {f"QC{n}" for n in range(1, 7)} <= labels
+    assert {"G_IN1", "G_IN2", "G_OUT1", "G_OUT2"} <= labels
+    exits = sum(len(dames.exits(x, y)) for x in range(dames.width) for y in range(dames.height))
+    arrows = [c for c in ax.collections if isinstance(c, Quiver)]
+    assert len(arrows) == 1 and len(arrows[0].get_offsets()) == exits
+
+
+def test_render_shows_the_marsh_in_its_own_colour(dames):
+    compiled = dames.to_json()
+    fig = Figure()
+    ax = fig.add_subplot(111)
+    render_2d(compiled, ax=ax)
+    pixels = ax.images[0].get_array()
+    marsh, building = tuple(pixels[20][70]), tuple(pixels[8][80])
+    unused, slot = tuple(pixels[10][100]), tuple(pixels[25][10])  # (100, 10) is open ground; (10, 25) a yard slot
+    assert dames.cell(100, 10).type == "blocked" and dames.cell(10, 25).type == "yard_slot"
+    assert marsh == pytest.approx(to_rgb(COLORS["blocked_exclusion"]))
+    assert building == pytest.approx(to_rgb(COLORS["blocked_building"]))
+    assert unused == pytest.approx(to_rgb(COLORS["blocked_unused"]))
+    assert len({marsh, building, unused, slot}) == 4
+    _legend(ax, compiled)
+    assert {t.get_text() for t in ax.get_legend().get_texts()} >= {"exclusion zone", "building", "unused"}
+
+
+def test_render_to_a_file_matches_the_picture_in_the_docs(dames, dames_path, tmp_path):
+    out = tmp_path / "dames.png"
+    dames.render_2d(out)
+    width, height = png_size(out)
+    assert width > 1500 and height > 500
+    docs_width, docs_height = png_size(dames_path.parent.parent / "docs" / "dames-point.png")
+    assert abs(docs_width - width) <= 0.03 * width and abs(docs_height - height) <= 0.03 * height  # same picture
+
+
+def test_the_trace_picture_is_there(dames_path):
+    width, height = png_size(dames_path.parent / "dames-point-trace.png")
+    assert width > 1000 and height > 400
