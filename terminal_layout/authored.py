@@ -64,6 +64,11 @@ def footprints(model: LayoutFile) -> list[Footprint]:
     prints += [Footprint(f"lanes[{i}]", "rect", e.rect, True) for i, e in enumerate(model.lanes)]
     prints += [Footprint(f"block {e.id}", "footprint", block_rect(e), True) for e in model.blocks]
     prints += [Footprint(f"gate {e.id}", "cell", (e.cell, e.cell), True) for e in model.gates]
+    # A charger turns an existing lane cell into a station, like a transfer point, so it
+    # shares the cell with a lane entry and does not claim it.
+    prints += [
+        Footprint(f"charger {e.id}", "cell", (e.cell, e.cell), False) for e in model.chargers
+    ]
     # Closures may sit on any road cell, so they never count as claiming a cell.
     prints += [
         Footprint(f"closures[{i}]", "cell", (c, c), False) for i, c in enumerate(model.closures)
@@ -140,6 +145,9 @@ def rule_3(model: LayoutFile) -> list[str]:
     lines = _duplicates("berth", [(b.id, f"berths[{i}]") for i, b in enumerate(model.berths)])
     lines += _duplicates("block", [(b.id, f"blocks[{i}]") for i, b in enumerate(model.blocks)])
     lines += _duplicates("gate", [(g.id, f"gates[{i}]") for i, g in enumerate(model.gates)])
+    lines += _duplicates(
+        "charger", [(c.id, f"chargers[{i}]") for i, c in enumerate(model.chargers)]
+    )
     cranes = [
         (c.id, f"berths[{i}].cranes[{j}]")
         for i, b in enumerate(model.berths)

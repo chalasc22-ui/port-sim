@@ -11,7 +11,11 @@ if TYPE_CHECKING:
     from .layout import Layout
 
 # Keys whose value is written one item per line, so diffs stay readable.
-_LINE_PER_ITEM = ("grid", "cells", "blocks", "berths", "gates", "closures")
+_LINE_PER_ITEM = ("grid", "cells", "blocks", "berths", "gates", "chargers", "yard_cranes", "closures")
+
+# Written into every compiled file. 1.1 added "chargers", "yard_cranes", "buffer_capacity"
+# and the "charging_station" cell type; a 1.0 reader that ignores unknown keys still works.
+COMPILED_VERSION = "1.1"
 
 
 def _is_plain(cell: Cell) -> bool:
@@ -34,7 +38,7 @@ def compiled_dict(layout: Layout) -> dict[str, Any]:
     width, height = layout.width, layout.height
     cell_size = layout.cell_size_m
     data: dict[str, Any] = {
-        "schema_version": "1.0",
+        "schema_version": COMPILED_VERSION,
         "name": layout.name,
         "cell_size_m": cell_size,
         "width": width,
@@ -49,6 +53,7 @@ def compiled_dict(layout: Layout) -> dict[str, Any]:
                 "slots": list(block.slots),
                 "transfer_points": [list(p) for p in block.transfer_points],
                 "crane": block.crane,
+                "buffer_capacity": block.buffer_capacity,
             }
             for block in layout.blocks.values()
         ],
@@ -56,7 +61,11 @@ def compiled_dict(layout: Layout) -> dict[str, Any]:
             {
                 "id": berth_id,
                 "cranes": [
-                    {"id": crane_id, "transfer_point": list(point)}
+                    {
+                        "id": crane_id,
+                        "transfer_point": list(point),
+                        "buffer_capacity": layout.cell(*point).attrs["buffer_capacity"],
+                    }
                     for crane_id, point in cranes
                 ],
             }
@@ -69,6 +78,18 @@ def compiled_dict(layout: Layout) -> dict[str, Any]:
             ),
             key=lambda gate: gate["id"],
         ),
+        "chargers": sorted(
+            ({"id": c.attrs["id"], "cell": [c.x, c.y]} for c in layout.charging_stations()),
+            key=lambda charger: charger["id"],
+        ),
+        "yard_cranes": [
+            {
+                "id": crane.id,
+                "blocks": list(crane.blocks),
+                "reach": [list(crane.reach[0]), list(crane.reach[1])],
+            }
+            for crane in layout.yard_cranes.values()
+        ],
     }
     if layout.closures:
         data["closures"] = [list(p) for p in sorted(layout.closures)]

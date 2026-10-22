@@ -22,9 +22,12 @@ CELL_TYPES: tuple[str, ...] = (
     "lane",
     "yard_slot",
     "gate",
+    "charging_station",
     "blocked",
 )
-TRAVERSABLE_TYPES: frozenset[str] = frozenset({"quay", "transfer_point", "lane", "gate"})
+TRAVERSABLE_TYPES: frozenset[str] = frozenset(
+    {"quay", "transfer_point", "lane", "gate", "charging_station"}
+)
 
 
 class LayoutError(ValueError):
@@ -105,6 +108,21 @@ class Block:
     crane: str | None
     slots: tuple[str, ...]
     transfer_points: tuple[Point, ...]
+    buffer_capacity: int = 1  # containers that can wait at each of its transfer points
+
+
+@dataclass(frozen=True)
+class YardCrane:
+    """A yard crane (RTG) and the blocks it serves.
+
+    ``reach`` is the smallest rectangle, as (low corner, high corner) with both corners
+    inclusive, that holds every slot and transfer point of those blocks. It is the crane's
+    envelope for drawing; where the crane stands at a given moment is not modelled.
+    """
+
+    id: str
+    blocks: tuple[str, ...]
+    reach: tuple[Point, Point]
 
 
 @dataclass(frozen=True)
@@ -122,3 +140,4 @@ class Core:
     berths: Mapping[str, tuple[tuple[str, Point], ...]]
     slot_index: Mapping[str, Point]
     source: Mapping[str, Any]  # the authored file as parsed, so a Layout can be rebuilt
+    yard_cranes: Mapping[str, YardCrane] = field(default_factory=dict)

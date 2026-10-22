@@ -56,6 +56,7 @@ class BlockedEntry(_Entry):
 class CraneEntry(_Entry):
     id: Ident
     x: Int
+    buffer_capacity: PosInt = 1  # containers that can wait at this crane's transfer point
 
 
 class BerthEntry(_Entry):
@@ -93,6 +94,7 @@ class BlockEntry(_Entry):
     cargo: Cargo = "general"
     service_side: Direction
     crane: Ident | None = None
+    buffer_capacity: PosInt = 1  # containers that can wait at each of the block's transfer points
 
     @model_validator(mode="after")
     def _side_matches_orientation(self) -> BlockEntry:
@@ -116,8 +118,15 @@ class GateEntry(_Entry):
     _check_exits = field_validator("exits")(_unique_exits)
 
 
+class ChargerEntry(_Entry):
+    """A charging station: the loader turns the lane cell at ``cell`` into one."""
+
+    id: Ident
+    cell: PointT
+
+
 class LayoutFile(_Entry):
-    schema_version: Literal["1.0"]
+    schema_version: Literal["1.0", "1.1"]  # 1.1 adds chargers and buffer_capacity; 1.0 files still load
     name: Annotated[str, Field(min_length=1)]
     cell_size_m: Metres
     width: GridSize
@@ -128,6 +137,7 @@ class LayoutFile(_Entry):
     lanes: list[LaneEntry] = []
     blocks: list[BlockEntry] = []
     gates: list[GateEntry] = []
+    chargers: list[ChargerEntry] = []
     closures: list[PointT] = []
 
 

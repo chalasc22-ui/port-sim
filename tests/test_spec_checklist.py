@@ -9,9 +9,10 @@ from terminal_layout.render import render_2d
 
 API_NAMES = (
     "cell cells is_traversable exits neighbors quay_cells gate_cells transfer_points "
-    "transfer_point_for slot slots_in_block with_closures shortest_path validate to_json render_2d"
+    "transfer_point_for slot slots_in_block with_closures shortest_path validate to_json render_2d "
+    "charging_stations"
 ).split()
-API_PROPERTIES = "width height cell_size_m name blocks berths closures warnings".split()
+API_PROPERTIES = "width height cell_size_m name blocks berths yard_cranes closures warnings".split()
 
 
 def test_every_api_member_exists(demo):

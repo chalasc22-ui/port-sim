@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import statistics
 import struct
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import networkx as nx
 import pytest
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
+from matplotlib.patches import Polygon, Rectangle
 from matplotlib.quiver import Quiver
 
 from terminal_layout.graph import build_graph
@@ -28,6 +30,15 @@ RTG_CLUSTERS = {
     "RTG4": ["F2", "F3", "G2", "G3"],
     "RTG5": ["H1", "H2", "H3", "H4"],
     "RTG6": ["N1", "N2", "N3", "N4"],
+}
+CHARGERS = [(f"CH{n}", (58 + n, 7)) for n in range(1, 7)]  # CH1 at (59, 7) ... CH6 at (64, 7)
+YARD_REACH = {  # bounding box of each crane's slots and transfer points, low corner then high corner
+    "RTG1": ((2, 12), (17, 26)),
+    "RTG2": ((19, 12), (35, 26)),
+    "RTG3": ((37, 12), (54, 26)),
+    "RTG4": ((19, 6), (54, 11)),
+    "RTG5": ((59, 28), (85, 31)),
+    "RTG6": ((99, 20), (110, 31)),
 }
 MAX_LEG = 250  # moves; a gross detour (a closed road, a loop gone wrong) shows up far above this
 
@@ -106,6 +117,27 @@ def test_the_forks_and_aisles_the_trip_lengths_depend_on(dames):
     assert dames.exits(88, 32) == ["E", "S"]
 
 
+def required_trips(dames):
+    """The four kinds of trip the other modules make, as move counts (None if there is no route).
+
+    Gate in -> bay and crane -> bay, then bay -> gate out and bay -> crane: 8 x 419 each way.
+    """
+    graph = build_graph(dames)
+    backward = graph.reverse(copy=False)
+    cranes = [pos for _, pos in dames.berths["B1"]]
+    gates_in = [c.pos for c in dames.gate_cells("in")]
+    gates_out = [c.pos for c in dames.gate_cells("out")]
+    bays = [p for block in dames.blocks.values() for p in block.transfer_points]
+    trips = []
+    for source in gates_in + cranes:
+        reach = nx.single_source_shortest_path_length(graph, source)
+        trips += [reach.get(bay) for bay in bays]
+    for target in gates_out + cranes:
+        reach = nx.single_source_shortest_path_length(backward, target)
+        trips += [reach.get(bay) for bay in bays]
+    return trips
+
+
 # ---- journeys ---------------------------------------------------------------
 
 
@@ -160,6 +192,57 @@ def test_closing_a_road_cell_is_reported_as_a_warning(dames, cell):
     assert dames.warnings == ()
 
 
+def test_trip_lengths_are_the_ones_measured_before_the_charging_depot_was_added(dames):
+    """Recomputed independently from the compiled file (a separate script that imports nothing from here)."""
+    trips = required_trips(dames)
+    assert len(trips) == 6704 and None not in trips
+    assert (min(trips), statistics.median(trips), max(trips)) == (15, 86, 228)
+    assert round(statistics.mean(trips), 1) == 90.1
+    qc1 = dict(dames.berths["B1"])["QC1"]
+    assert len(dames.shortest_path(qc1, dames.blocks["A1"].transfer_points[0])) - 1 == 108
+
+
+# ---- charging, buffers and yard cranes ------------------------------------------------
+
+
+def test_six_charging_stations_sit_in_a_depot_beside_the_east_column(dames):
+    assert [(c.attrs["id"], c.pos) for c in dames.charging_stations()] == CHARGERS
+    assert {c.exits for c in dames.charging_stations()} == {("S",)}
+    assert dames.validate() == []
+
+
+def test_the_depot_is_a_loop_so_six_parked_vehicles_cut_nothing_off(dames):
+    """Rule 15 on the real map: close all six stations as if each held a vehicle and nothing is stranded."""
+    stations = {c.pos for c in dames.charging_stations()}
+    assert dames.with_closures(stations).warnings == ()
+
+
+def test_the_depot_is_not_a_shortcut(dames):
+    """From the fork at (57, 8) back to the road at (57, 6): 2 moves along the road, 6 through the depot."""
+    assert len(dames.shortest_path((57, 8), (57, 6))) - 1 == 2
+    assert len(dames.with_closures({(57, 7)}).shortest_path((57, 8), (57, 6))) - 1 == 6
+
+
+def test_every_transfer_point_holds_two_containers_for_now(dames):
+    """A placeholder until the yard and quay owners say what a real buffer holds."""
+    assert {c.attrs["buffer_capacity"] for c in dames.cells("transfer_point")} == {2}
+    assert {b.buffer_capacity for b in dames.blocks.values()} == {2}
+
+
+def test_each_yard_crane_has_its_blocks_and_its_reach(dames):
+    assert {k: v.reach for k, v in dames.yard_cranes.items()} == YARD_REACH
+    assert {k: list(v.blocks) for k, v in dames.yard_cranes.items()} == RTG_CLUSTERS
+
+
+def test_a_crane_reach_box_holds_every_slot_and_transfer_point_of_its_blocks(dames):
+    for crane in dames.yard_cranes.values():
+        (x0, y0), (x1, y1) = crane.reach
+        for block_id in crane.blocks:
+            points = [dames.slot(s).pos for s in dames.slots_in_block(block_id)]
+            points += [p.pos for p in dames.transfer_points(block_id=block_id)]
+            assert all(x0 <= x <= x1 and y0 <= y <= y1 for x, y in points), (crane.id, block_id)
+
+
 # ---- the files ----------------------------------------------------------------
 
 
@@ -205,6 +288,22 @@ def test_render_draws_every_block_crane_gate_and_exit(dames):
     exits = sum(len(dames.exits(x, y)) for x in range(dames.width) for y in range(dames.height))
     arrows = [c for c in ax.collections if isinstance(c, Quiver)]
     assert len(arrows) == 1 and len(arrows[0].get_offsets()) == exits
+
+
+def test_render_draws_the_stations_the_buffers_and_each_crane_reach(dames):
+    compiled = dames.to_json()
+    fig = Figure()
+    ax = fig.add_subplot(111)
+    render_2d(compiled, ax=ax)
+    assert {f"RTG{n}" for n in range(1, 7)} <= {t.get_text() for t in ax.texts}
+    assert len([p for p in ax.patches if isinstance(p, Polygon)]) == 6  # one bolt per station
+    assert len([p for p in ax.patches if isinstance(p, Rectangle)]) == 6  # one reach box per yard crane
+    hatched = [c for c in ax.collections if c.get_hatch() == "////"]
+    assert len(hatched) == 1 and len(hatched[0].get_paths()) == 425  # every transfer point holds two
+    _legend(ax, compiled)
+    assert {t.get_text() for t in ax.get_legend().get_texts()} >= {
+        "charging station", "transfer buffer", "yard crane reach",
+    }
 
 
 def test_render_shows_the_marsh_in_its_own_colour(dames):

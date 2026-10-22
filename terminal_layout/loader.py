@@ -3,7 +3,7 @@
 Stages, each reporting every problem it finds before stopping:
   1. shape and enums (schema.py, rule 10)
   2. bounds, overlaps, ids (authored.py, rules 1 to 3)
-  3. compile, then rules 4 to 9, 11 and 13 on the compiled map
+  3. compile, then rules 4 to 9, 11, 13, 14 and 15 on the compiled map
 
 A later stage only runs when the earlier ones found nothing, because the
 compiled map is meaningless if the authored file is malformed. Nothing is
@@ -19,7 +19,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-from .authored import authored_errors, rect_cells, service_pos, slot_pos
+from .authored import authored_errors, block_rect, rect_cells, service_pos, slot_pos
 from .layout import Layout
 from .model import (
     DIRECTIONS,
@@ -28,11 +28,12 @@ from .model import (
     Core,
     LayoutError,
     Point,
+    YardCrane,
     freeze,
     step,
     thaw,
 )
-from .schema import BerthEntry, BlockEntry, LayoutFile, parse_authored
+from .schema import BerthEntry, BlockEntry, ChargerEntry, LayoutFile, parse_authored
 from .validate import sort_by_rule
 
 _Cells = dict[Point, Cell]
@@ -152,11 +153,12 @@ def _found(cell: Cell | None) -> str:
     return f"found a {cell.type.replace('_', ' ')} cell"
 
 
-def _make_transfer_point(cells: _Cells, point: Point, serves: dict[str, Any]) -> None:
+def _make_transfer_point(
+    cells: _Cells, point: Point, serves: dict[str, Any], buffer_capacity: int
+) -> None:
     old = cells[point]
-    cells[point] = replace(
-        old, type="transfer_point", attrs=freeze({**thaw(old.attrs), "serves": serves})
-    )
+    attrs = {**thaw(old.attrs), "serves": serves, "buffer_capacity": buffer_capacity}
+    cells[point] = replace(old, type="transfer_point", attrs=freeze(attrs))
 
 
 def _convert_block_transfers(
@@ -178,7 +180,9 @@ def _convert_block_transfers(
                     f"{block.service_side} (expected at {point}, {_found(cell)})"
                 )
             else:
-                _make_transfer_point(cells, point, {"block": block.id, "bay": bay})
+                _make_transfer_point(
+                    cells, point, {"block": block.id, "bay": bay}, block.buffer_capacity
+                )
                 found[block.id].append(point)
     return found
 
@@ -202,9 +206,57 @@ def _convert_berth_transfers(
                     f"{berth.id} under it (expected at {point}, {_found(cell)})"
                 )
             else:
-                _make_transfer_point(cells, point, {"berth": berth.id, "crane": crane.id})
+                _make_transfer_point(
+                    cells, point, {"berth": berth.id, "crane": crane.id}, crane.buffer_capacity
+                )
                 found[berth.id].append((crane.id, point))
     return found
+
+
+def _convert_chargers(cells: _Cells, chargers: list[ChargerEntry], errors: list[str]) -> None:
+    """Rule 14: each charger sits on a plain lane cell; the cell becomes a charging station."""
+    for charger in chargers:
+        point = charger.cell
+        cell = cells.get(point)
+        if cell is not None and cell.type == "charging_station":
+            errors.append(
+                f"rule 14: chargers {cell.attrs['id']} and {charger.id} are both on cell {point}"
+            )
+        elif cell is None or cell.type != "lane":
+            errors.append(
+                f"rule 14: charger {charger.id} has no lane cell under it "
+                f"(expected at {point}, {_found(cell)})"
+            )
+        else:
+            attrs = {**thaw(cell.attrs), "id": charger.id}
+            cells[point] = replace(cell, type="charging_station", attrs=freeze(attrs))
+
+
+def _yard_cranes(
+    blocks: list[BlockEntry], block_points: dict[str, list[Point]]
+) -> dict[str, YardCrane]:
+    """One entry per crane id named on a block: its blocks and the rectangle that holds them."""
+    members: dict[str, list[BlockEntry]] = {}
+    for block in blocks:
+        if block.crane is not None:
+            members.setdefault(block.crane, []).append(block)
+    cranes: dict[str, YardCrane] = {}
+    for crane_id, group in sorted(members.items()):
+        xs: list[int] = []
+        ys: list[int] = []
+        for block in group:
+            (x0, y0), (x1, y1) = block_rect(block)
+            xs += [x0, x1]
+            ys += [y0, y1]
+            for px, py in block_points[block.id]:
+                xs.append(px)
+                ys.append(py)
+        cranes[crane_id] = YardCrane(
+            id=crane_id,
+            blocks=tuple(sorted(b.id for b in group)),
+            reach=((min(xs), min(ys)), (max(xs), max(ys))),
+        )
+    return cranes
 
 
 def _mark_cranes(cells: _Cells, berth_points: dict[str, list[tuple[str, Point]]]) -> None:
@@ -232,6 +284,7 @@ def compile_core(model: LayoutFile) -> tuple[Core, list[str]]:
     errors: list[str] = []
     block_points = _convert_block_transfers(cells, model.blocks, errors)
     berth_points = _convert_berth_transfers(cells, model.berths, errors)
+    _convert_chargers(cells, model.chargers, errors)
     _mark_cranes(cells, berth_points)
     blocks = {
         b.id: Block(
@@ -243,6 +296,7 @@ def compile_core(model: LayoutFile) -> tuple[Core, list[str]]:
             crane=b.crane,
             slots=tuple(slots[b.id]),
             transfer_points=tuple(sorted(block_points[b.id])),
+            buffer_capacity=b.buffer_capacity,
         )
         for b in sorted(model.blocks, key=lambda b: b.id)
     }
@@ -267,5 +321,6 @@ def compile_core(model: LayoutFile) -> tuple[Core, list[str]]:
         berths=MappingProxyType(berths),
         slot_index=MappingProxyType(slot_index),
         source=freeze(model.model_dump(mode="json")),
+        yard_cranes=MappingProxyType(_yard_cranes(model.blocks, block_points)),
     )
     return core, errors

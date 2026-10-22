@@ -17,6 +17,7 @@ from .model import (
     Core,
     LayoutError,
     Point,
+    YardCrane,
     step,
     thaw,
 )
@@ -206,6 +207,13 @@ class Layout:
         gates = self.cells("gate")
         return [g for g in gates if flow is None or g.attrs["flow"] == flow]
 
+    def charging_stations(self) -> list[Cell]:
+        """Charging station cells, by (x, y). Each holds one vehicle and has an ``id``.
+
+        Lists the static map: closed cells are still listed.
+        """
+        return self.cells("charging_station")
+
     def transfer_points(
         self, block_id: str | None = None, berth_id: str | None = None
     ) -> list[Cell]:
@@ -243,6 +251,11 @@ class Layout:
     def berths(self) -> dict[str, tuple[tuple[str, Point], ...]]:
         """For each berth id, its cranes as (crane id, transfer point (x, y))."""
         return dict(self._core.berths)
+
+    @property
+    def yard_cranes(self) -> dict[str, YardCrane]:
+        """Yard cranes by id, ordered by id: each crane's blocks and its reach rectangle."""
+        return dict(self._core.yard_cranes)
 
     def slot(self, slot_id: str) -> Cell:
         """The yard_slot cell with this ground slot id, e.g. ``"A-03-02"``."""
@@ -309,7 +322,7 @@ class Layout:
     def validate(self) -> list[str]:
         """Problems found in the map and its closures; empty when valid.
 
-        Checks rules 4 to 7, 9 and 13 on the open map and rule 11 on the closures.
+        Checks rules 4 to 7, 9, 13 and 15 on the open map and rule 11 on the closures.
         """
         base = self if not self._closures else Layout(self._core)
         lines = validate.validate_layout(base)

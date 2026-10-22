@@ -15,7 +15,9 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib import patheffects
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
-from matplotlib.patches import Patch, Rectangle
+from matplotlib.collections import PatchCollection
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch, Polygon, Rectangle
 
 from .model import DELTAS
 
@@ -29,11 +31,15 @@ COLORS = MappingProxyType(
         "yard_slot": "#9ccc9c",
         "gate_in": "#4fae7b",
         "gate_out": "#d9645a",
+        "charging_station": "#8e6fd1",
         "blocked_building": "#555555",
         "blocked_exclusion": "#a89f6e",
         "blocked_unused": "#fafafa",
     }
 )
+BUFFER_EDGE = "#8a4b00"  # hatch on transfer points that hold more than one container
+CRANE_INK = "#26327a"  # yard crane reach outline and tag
+BOLT = ((0.60, 0.90), (0.25, 0.48), (0.47, 0.48), (0.38, 0.10), (0.75, 0.55), (0.53, 0.55))
 LEGEND = (
     ("water", "water"),
     ("berth", "berth"),
@@ -43,6 +49,7 @@ LEGEND = (
     ("yard_slot", "yard slot"),
     ("gate_in", "gate in"),
     ("gate_out", "gate out"),
+    ("charging_station", "charging station"),
     ("blocked_building", "building"),
     ("blocked_exclusion", "exclusion zone"),
     ("blocked_unused", "unused"),
@@ -129,6 +136,12 @@ def _draw_labels(ax: Any, cells: dict[str, Any], font: float) -> None:
             ax.plot(x + 0.5, y + 0.5, marker="s", color="#222222", markersize=font * 1.1, zorder=5)
             ax.text(x + 0.5, y + 0.5, entry["crane"], ha="center", va="center",
                     fontsize=font * 0.7, color="white", zorder=6)
+        elif entry["type"] == "charging_station":
+            ax.add_patch(Polygon([(x + bx, y + by) for bx, by in BOLT], closed=True,
+                                 facecolor="#ffe14d", edgecolor="#2a1d5c", linewidth=0.4, zorder=5))
+            if font >= 5:  # big cells (small maps) have room for the id
+                ax.text(x + 0.5, y + 0.1, entry["id"], ha="center", va="bottom",
+                        fontsize=font * 0.55, color="white", fontweight="bold", zorder=6)
         elif entry["type"] == "gate":
             crowded = any(other != (x, y) and other[1] == y and abs(other[0] - x) <= 3 for other in gates)
             if crowded:  # neighbouring gates: stand the labels up so they do not overprint
@@ -145,7 +158,32 @@ def _draw_labels(ax: Any, cells: dict[str, Any], font: float) -> None:
                 fontweight="bold", color="#1b4d1b", zorder=6)
 
 
+def _draw_buffers(ax: Any, cells: dict[str, Any]) -> None:
+    """Hatch the transfer points that hold more than one container (a transfer buffer)."""
+    rects = []
+    for key, entry in cells.items():
+        if entry["type"] == "transfer_point" and entry.get("buffer_capacity", 1) > 1:
+            x, y = _split(key)
+            rects.append(Rectangle((x, y), 1, 1))
+    if rects:
+        ax.add_collection(PatchCollection(rects, facecolor="none", edgecolor=BUFFER_EDGE,
+                                          linewidth=0, hatch="////", zorder=3))
+
+
+def _draw_yard_cranes(ax: Any, compiled: dict[str, Any], font: float) -> None:
+    """Outline each yard crane's reach and tag it at the top-left corner."""
+    for crane in compiled.get("yard_cranes", []):
+        (x0, y0), (x1, y1) = crane["reach"]
+        ax.add_patch(Rectangle((x0, y0), x1 - x0 + 1, y1 - y0 + 1, fill=False, edgecolor=CRANE_INK,
+                               linestyle=(0, (4, 2)), linewidth=1.0, zorder=3.5))
+        ax.text(x0 + 0.25, y1 + 0.85, crane["id"], ha="left", va="top", fontsize=font * 0.8,
+                color="white", fontweight="bold", zorder=8,
+                bbox={"boxstyle": "round,pad=0.18", "facecolor": CRANE_INK, "edgecolor": "none"})
+
+
 def _draw_extras(ax: Any, compiled: dict[str, Any], show_ids: bool, font: float) -> None:
+    _draw_buffers(ax, compiled["cells"])
+    _draw_yard_cranes(ax, compiled, font)
     for x, y in compiled.get("closures", []):
         ax.add_patch(Rectangle((x, y), 1, 1, fill=False, hatch="///", edgecolor="#c0392b",
                                linewidth=0.8, zorder=7))
@@ -163,11 +201,21 @@ def _legend(ax: Any, compiled: dict[str, Any]) -> None:
         for y in range(compiled["height"])
         for x in range(compiled["width"])
     }
-    handles = [
-        Patch(facecolor=COLORS[key], edgecolor="#888888", label=label)
-        for key, label in LEGEND
-        if key in present
-    ]
+    capacities = [e.get("buffer_capacity", 1) for e in cells.values() if e["type"] == "transfer_point"]
+    handles = []
+    for key, label in LEGEND:
+        if key not in present:
+            continue
+        if key == "transfer_point":
+            if any(c <= 1 for c in capacities):
+                handles.append(Patch(facecolor=COLORS[key], edgecolor="#888888", label=label))
+            if any(c > 1 for c in capacities):
+                handles.append(Patch(facecolor=COLORS[key], edgecolor=BUFFER_EDGE, hatch="////",
+                                     label="transfer buffer"))
+        else:
+            handles.append(Patch(facecolor=COLORS[key], edgecolor="#888888", label=label))
+    if compiled.get("yard_cranes"):
+        handles.append(Line2D([0], [0], color=CRANE_INK, linestyle=(0, (4, 2)), label="yard crane reach"))
     if compiled.get("closures"):
         handles.append(Patch(facecolor="white", edgecolor="#c0392b", hatch="///", label="closed"))
     ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.01, 1.0), fontsize=8, frameon=False)

@@ -146,9 +146,32 @@ def closure_warnings(view: Layout) -> list[str]:
     ]
 
 
+def rule_15(layout: Layout) -> list[str]:
+    """A vehicle standing in a charging station never cuts the network.
+
+    Re-runs rules 6 and 7 with every charging station treated as occupied. A station on a
+    through road fails this; a station on a loop beside the road passes.
+    """
+    stations = frozenset(cell.pos for cell in layout.cells("charging_station"))
+    if not stations:
+        return []
+    subject = "the charging station" if len(stations) == 1 else "every charging station"
+    return [
+        f"rule 15: with {subject} occupied, {text}"
+        for _, text in connectivity_problems(layout, stations)
+    ]
+
+
 def validate_layout(base: Layout) -> list[str]:
-    """Rules 4 to 7, 9 and 13 on a view that has no closures."""
-    return rule_4(base) + rule_5(base) + rules_6_and_7(base) + rule_9(base) + rule_13(base)
+    """Rules 4 to 7, 9, 13 and 15 on a view that has no closures."""
+    return (
+        rule_4(base)
+        + rule_5(base)
+        + rules_6_and_7(base)
+        + rule_9(base)
+        + rule_13(base)
+        + rule_15(base)
+    )
 
 
 def sort_by_rule(lines: Iterable[str]) -> list[str]:

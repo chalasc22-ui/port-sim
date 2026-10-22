@@ -16,14 +16,22 @@ if TYPE_CHECKING:
     from .layout import Layout
 
 
-def build_graph(layout: Layout) -> nx.DiGraph:
-    """Directed graph: one node per open traversable cell, one edge per legal move."""
+def build_graph(layout: Layout, exclude: frozenset[Point] = frozenset()) -> nx.DiGraph:
+    """Directed graph: one node per open traversable cell, one edge per legal move.
+
+    ``exclude`` leaves cells out as if a vehicle were standing in them (rule 15).
+    """
     graph: nx.DiGraph = nx.DiGraph()
-    nodes = [cell.pos for cell in layout.cells() if layout.is_traversable(cell.x, cell.y)]
+    nodes = [
+        cell.pos
+        for cell in layout.cells()
+        if layout.is_traversable(cell.x, cell.y) and cell.pos not in exclude
+    ]
     graph.add_nodes_from(nodes)
     for point in nodes:
         for target in layout.neighbors(*point):
-            graph.add_edge(point, target)
+            if target not in exclude:
+                graph.add_edge(point, target)
     return graph
 
 
@@ -87,8 +95,13 @@ def _gate_problems(
     return problems
 
 
-def connectivity_problems(layout: Layout) -> list[tuple[int, str]]:
-    """(rule number, text) pairs for rule 6 and rule 7 problems in this view."""
-    graph = build_graph(layout)
+def connectivity_problems(
+    layout: Layout, exclude: frozenset[Point] = frozenset()
+) -> list[tuple[int, str]]:
+    """(rule number, text) pairs for rule 6 and rule 7 problems in this view.
+
+    With ``exclude`` the named cells are treated as blocked by a standing vehicle.
+    """
+    graph = build_graph(layout, exclude)
     internal = sorted(p for p in graph if layout.cell(*p).type != "gate")
     return _internal_problems(graph, internal) + _gate_problems(graph, layout, internal)

@@ -46,6 +46,15 @@ Circulation (everything is one way; the arrows in render_2d show it):
   yard, so gate traffic reaches it directly. Row 1 flows west, so a truck that misses a
   gate-out lane loops back into the inbound road.
 * Forks and crossings are cells with two exits.
+* Charging depot (schema 1.1). South of the yard, the east column forks east at (57, 8) into a
+  loop of three rows: an access lane (y = 8, flowing east), a row of six charging stations
+  CH1 to CH6 (y = 7) and an exit lane (y = 6, flowing west) that rejoins the column at
+  (57, 6). A vehicle can charge in any bay and the loop still carries the others past, so
+  charging never blocks the road (rule 15 checks this). The loop is 6 moves or more against 2
+  for the column, so it shortens no existing trip.
+* Transfer buffers (schema 1.1). Every transfer point holds two containers, at the quay and in
+  the yard (YARD_BUFFER and QUAY_BUFFER). These are placeholders until the yard and quay
+  modules say what they need; the layout only stores the number.
 """
 
 import json
@@ -83,6 +92,11 @@ NW_ROWS = [30, 27, 24, 21]       # north-west yard block rows (origin y, 2 rows 
 NW_X, NW_BAYS = 99, 12
 MARSH = [[59, 12], [84, 26]]           # marsh and ponds: nothing can be built or driven here
 GATE_BUILDING = [[78, 7], [82, 10]]
+YARD_BUFFER = 2        # containers that can wait at each yard transfer point (placeholder, see above)
+QUAY_BUFFER = 2        # containers that can wait under each quay crane (placeholder, see above)
+CHARGE_FORK_Y = 8      # row of the east column cell that forks east into the charging depot
+CHARGE_X0 = 59         # x of the first charging station
+CHARGERS = 6           # charging stations CH1 to CH6, side by side
 
 
 def build() -> dict:
@@ -94,7 +108,8 @@ def build() -> dict:
 
     def block(bid, x, y, bays, rows, rtg):
         blocks.append({"id": bid, "origin": [x, y], "bays": bays, "rows": rows, "orientation": "EW",
-                       "max_tier": 5, "cargo": "general", "service_side": "S", "crane": f"RTG{rtg}"})
+                       "max_tier": 5, "cargo": "general", "service_side": "S", "crane": f"RTG{rtg}",
+                       "buffer_capacity": YARD_BUFFER})
 
     # ---- quay and apron -----------------------------------------------------
     lane(1, QUAY_Y, BERTH_X0 - 1, QUAY_Y, ["E"])
@@ -139,13 +154,24 @@ def build() -> dict:
         for y in range(service_ys[-1] + 1, QUAY_Y):
             if y not in service_ys and y != RET_Y:
                 lane(aisle, y, aisle, y, ["N"])
-    taken = {RET_Y, *service_ys, *strip_lane_ys}   # east column: south from the apron, skipping cells set elsewhere
+    taken = {RET_Y, *service_ys, *strip_lane_ys, CHARGE_FORK_Y}   # east column: south from the apron, skipping cells set elsewhere
     for y in range(service_ys[-1] + 1, APRON_Y):
         if y not in taken:
             lane(EAST_X, y, EAST_X, y, ["S"])
+    lane(EAST_X, CHARGE_FORK_Y, EAST_X, CHARGE_FORK_Y, ["S", "E"])   # fork: on south, or east into the charging depot
     west_top = min(ys for ys, y0 in zip(service_ys, SE_ROWS) if y0 >= NO_COL1_BELOW)
     for y in range(west_top, QUAY_Y):              # west column: north from the lowest lane that reaches it
         lane(WEST_X, y, WEST_X, y, ["N", "E"] if y == RET_Y else ["N"])
+
+    # ---- charging depot: a loop beside the east column (access lane, bays, exit lane) ---------
+    last_bay = CHARGE_X0 + CHARGERS - 1
+    loop_x = last_bay + 1                                   # east side of the loop, flowing south
+    access_y, bay_y, exit_y = CHARGE_FORK_Y, CHARGE_FORK_Y - 1, CHARGE_FORK_Y - 2
+    lane(EAST_X + 1, access_y, CHARGE_X0 - 1, access_y, ["E"])        # from the fork to the first bay
+    lane(CHARGE_X0, access_y, last_bay, access_y, ["E", "S"])         # on east, or down into a bay
+    lane(loop_x, bay_y, loop_x, access_y, ["S"])                      # around the east end
+    lane(CHARGE_X0, bay_y, last_bay, bay_y, ["S"])                    # the bays; the loader makes them stations
+    lane(EAST_X + 1, exit_y, loop_x, exit_y, ["W"])                   # exit lane, west into the east column
 
     # ---- apron strip yard: two pairs of one-row blocks, lanes flow east into the inbound road
     for k, (x0, bays) in enumerate(STRIPS):
@@ -205,7 +231,7 @@ def build() -> dict:
     lane(GATES_IN[-1][1], 1, min(out_xs) - 1, 1, ["W"])  # gate-in lanes feed row 1 and the inbound road
 
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "name": "dames-point",
         "notes": "Simplified JAXPORT Dames Point container terminal, traced by eye from satellite "
                  "imagery (Imagery (c) 2026 Airbus, Maxar Technologies; Map data (c) 2026 Google; Oct 2026), "
@@ -224,11 +250,13 @@ def build() -> dict:
             {"rect": GATE_BUILDING, "reason": "building", "notes": "gate complex"},
         ],
         "berths": [{"id": "B1", "rect": [[BERTH_X0, QUAY_Y + 1], [BERTH_X1, QUAY_Y + 1]], "quay_y": QUAY_Y,
-                    "cranes": [{"id": f"QC{i + 1}", "x": x} for i, x in enumerate(CRANES_X)]}],
+                    "cranes": [{"id": f"QC{i + 1}", "x": x, "buffer_capacity": QUAY_BUFFER}
+                               for i, x in enumerate(CRANES_X)]}],
         "lanes": lanes,
         "blocks": blocks,
         "gates": [{"id": gid, "cell": [x, 0], "flow": "in", "exits": ["N"]} for gid, x in GATES_IN]
         + [{"id": gid, "cell": [x, 0], "flow": "out", "exits": []} for gid, x in GATES_OUT],
+        "chargers": [{"id": f"CH{i + 1}", "cell": [CHARGE_X0 + i, bay_y]} for i in range(CHARGERS)],
         "closures": [],
     }
 
