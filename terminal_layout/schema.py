@@ -25,6 +25,7 @@ MAX_GRID = 500  # cells per side; a typo like 120000 should fail fast, not alloc
 
 Int = Annotated[int, Field(strict=True)]
 PosInt = Annotated[int, Field(strict=True, ge=1)]
+NonNegInt = Annotated[int, Field(strict=True, ge=0)]
 GridSize = Annotated[int, Field(strict=True, ge=1, le=MAX_GRID)]
 Metres = Annotated[float, Field(strict=True, gt=0, allow_inf_nan=False)]
 Ident = Annotated[str, Field(pattern=r"^[A-Za-z0-9_]+$")]
@@ -56,7 +57,12 @@ class BlockedEntry(_Entry):
 class CraneEntry(_Entry):
     id: Ident
     x: Int
-    buffer_capacity: PosInt = 1  # containers that can wait at this crane's transfer point
+    # Quay cells under the crane where a vehicle stands for the handover, side by side along
+    # the quay and centred on x (4 lanes: x - 1 to x + 2). One lane per vehicle.
+    transfer_lanes: PosInt = 1
+    # Containers that may be set on the ground at each transfer point. 0 is a coupled
+    # handover: the crane lifts straight between the ship and a waiting vehicle.
+    buffer_capacity: NonNegInt = 0
 
 
 class BerthEntry(_Entry):
@@ -94,7 +100,9 @@ class BlockEntry(_Entry):
     cargo: Cargo = "general"
     service_side: Direction
     crane: Ident | None = None
-    buffer_capacity: PosInt = 1  # containers that can wait at each of the block's transfer points
+    # Containers that may be set on the ground at each of the block's transfer points. 0 is a
+    # coupled handover: the yard crane lifts straight between the stack and a waiting vehicle.
+    buffer_capacity: NonNegInt = 0
 
     @model_validator(mode="after")
     def _side_matches_orientation(self) -> BlockEntry:
@@ -126,7 +134,9 @@ class ChargerEntry(_Entry):
 
 
 class LayoutFile(_Entry):
-    schema_version: Literal["1.0", "1.1"]  # 1.1 adds chargers and buffer_capacity; 1.0 files still load
+    # 1.1 added chargers and buffer_capacity; 1.2 adds transfer_lanes and lets buffer_capacity
+    # be 0 (its new default). Older files still load.
+    schema_version: Literal["1.0", "1.1", "1.2"]
     name: Annotated[str, Field(min_length=1)]
     cell_size_m: Metres
     width: GridSize

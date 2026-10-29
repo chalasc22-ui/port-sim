@@ -31,7 +31,11 @@ RTG_CLUSTERS = {
     "RTG5": ["H1", "H2", "H3", "H4"],
     "RTG6": ["N1", "N2", "N3", "N4"],
 }
-CHARGERS = [(f"CH{n}", (58 + n, 7)) for n in range(1, 7)]  # CH1 at (59, 7) ... CH6 at (64, 7)
+CHARGERS = (  # by (x, y): east depot CH1 at (59, 7) ... CH6 at (64, 7); return-lane depot CH7 at (93, 29) ... CH12 at (88, 29)
+    [(f"CH{n}", (58 + n, 7)) for n in range(1, 7)] + [(f"CH{n}", (100 - n, 29)) for n in range(12, 6, -1)]
+)
+QUAY_CRANES = {"B1": {"QC1": 14, "QC2": 31, "QC3": 48}, "B2": {"QC4": 65, "QC5": 82, "QC6": 99}}
+BYPASS_FORKS = (57, 76, 90, 96, 104)  # bypass-lane cells that also drop south
 YARD_REACH = {  # bounding box of each crane's slots and transfer points, low corner then high corner
     "RTG1": ((2, 12), (17, 26)),
     "RTG2": ((19, 12), (35, 26)),
@@ -65,19 +69,28 @@ def test_size_and_name(dames):
     assert dames.warnings == ()
 
 
-def test_six_quay_cranes_evenly_spaced_on_one_berth(dames):
-    assert list(dames.berths) == ["B1"]
-    cranes = dames.berths["B1"]
-    assert [c for c, _ in cranes] == [f"QC{n}" for n in range(1, 7)]
-    xs = [pos[0] for _, pos in cranes]
-    assert xs == [14, 31, 48, 65, 82, 99]
-    assert {pos[1] for _, pos in cranes} == {34}
+def test_six_quay_cranes_evenly_spaced_on_two_berths(dames):
+    assert list(dames.berths) == ["B1", "B2"]
+    for berth_id, cranes in QUAY_CRANES.items():
+        assert [(c, pos) for c, pos in dames.berths[berth_id]] == [(c, (x, 34)) for c, x in cranes.items()]
+    xs = [pos[0] for berth in dames.berths.values() for _, pos in berth]
     assert len({b - a for a, b in zip(xs, xs[1:])}) == 1  # one gap, 17 cells = 255 m
 
 
-def test_berth_is_100_cells_of_the_real_1525_m(dames):
+def test_each_quay_crane_has_four_transfer_lanes_beside_the_berth(dames):
+    """A typical back reach has four transfer lanes; the vehicle waits in one and the crane lifts to it."""
+    for crane in dames.quay_cranes.values():
+        assert crane.transfer_points == tuple((crane.x + d, 34) for d in (-1, 0, 1, 2)), crane.id
+        assert crane.buffer_capacity == 0
+        assert all(dames.cell(x, 35).attrs["berth"] == crane.berth for x, _ in crane.transfer_points)
+    assert len(dames.transfer_points(berth_id="B1")) == 12 and len(dames.transfer_points(berth_id="B2")) == 12
+
+
+def test_berth_is_100_cells_of_the_real_1525_m_split_in_two(dames):
+    """B1 and B2 are a placeholder split at x = 55/56 until the ship arrival owner says how many berths."""
     assert len(dames.cells("berth")) == 100  # 1,500 m of the real 1,525 m
-    assert len(dames.quay_cells("B1")) == 100
+    assert len(dames.quay_cells("B1")) == 50 and len(dames.quay_cells("B2")) == 50
+    assert dames.cell(55, 35).attrs["berth"] == "B1" and dames.cell(56, 35).attrs["berth"] == "B2"
 
 
 def test_blocks_slots_and_bays(dames):
@@ -85,7 +98,7 @@ def test_blocks_slots_and_bays(dames):
     assert sum(len(dames.slots_in_block(b)) for b in dames.blocks) == 786
     assert len(dames.cells("yard_slot")) == 786
     bays = sum(block.bays for block in dames.blocks.values())
-    assert bays == 419 == len(dames.cells("transfer_point")) - 6  # one transfer point per bay, one per crane
+    assert bays == 419 == len(dames.cells("transfer_point")) - 24  # one transfer point per bay, four per crane
     assert {block.max_tier for block in dames.blocks.values()} == {5}
 
 
@@ -107,14 +120,30 @@ def test_marsh_and_gate_complex_are_blocked_with_a_reason(dames):
 
 
 def test_the_forks_and_aisles_the_trip_lengths_depend_on(dames):
-    """Design pins: the quay forks south, the northbound aisles, the east branch to the north-west yard."""
-    for x in (57, 86, 96, 104):
-        assert dames.exits(x, 34) == ["E", "S"], x
-    assert dames.exits(40, 34) == ["E"]
+    """Design pins: the quay and bypass pair, the forks south, the return lane, the aisles, the south road."""
+    assert dames.exits(40, 34) == ["E", "S"] and dames.exits(40, 33) == ["N", "E"]  # change lane anywhere
+    assert dames.exits(1, 34) == ["E"] and dames.exits(1, 33) == ["N", "E"]        # but not back into the west column
+    for x in BYPASS_FORKS:
+        assert dames.exits(x, 33) == ["E", "S"], x
+    assert dames.exits(57, 32) == ["S"]                   # the outbound road ends at the east column
+    assert dames.exits(70, 32) == ["W"]                   # the return lane
+    assert dames.exits(86, 32) == ["N", "W"]              # the inbound road meets it
+    assert dames.exits(96, 32) == ["S", "W"]              # the exit road crosses it
+    assert dames.exits(104, 32) == ["E", "W"]             # and its east branch feeds the north-west yard
     for x in (18, 36):
         assert dames.exits(x, 20) == ["N"], x
-        assert dames.exits(x, 32) == ["N", "E"], x
-    assert dames.exits(88, 32) == ["E", "S"]
+        assert dames.exits(x, 32) == ["N", "E"] and dames.exits(x, 33) == ["N", "E"], x
+    assert dames.exits(57, 6) == ["S", "W"] and dames.exits(57, 5) == ["E"]   # foot of the east column, south road
+    assert dames.exits(80, 5) == ["N", "E"] and dames.exits(88, 5) == ["S"]  # gate-in column crossing; gate-out column
+    assert dames.cell(88, 20).type == "blocked"           # the old gate-out column is gone
+
+
+def test_a_vehicle_waiting_under_a_crane_does_not_block_the_quay(dames):
+    """With all four of QC1's lanes occupied, traffic to QC2 still gets past on the bypass lane."""
+    busy = dames.with_closures(set(dames.quay_cranes["QC1"].transfer_points))
+    assert busy.warnings == ()
+    assert len(dames.shortest_path((6, 34), (31, 34))) - 1 == 25
+    assert len(busy.shortest_path((6, 34), (31, 34))) - 1 == 27  # two moves more: down to the bypass and back
 
 
 def required_trips(dames):
@@ -124,7 +153,7 @@ def required_trips(dames):
     """
     graph = build_graph(dames)
     backward = graph.reverse(copy=False)
-    cranes = [pos for _, pos in dames.berths["B1"]]
+    cranes = [pos for berth in dames.berths.values() for _, pos in berth]
     gates_in = [c.pos for c in dames.gate_cells("in")]
     gates_out = [c.pos for c in dames.gate_cells("out")]
     bays = [p for block in dames.blocks.values() for p in block.transfer_points]
@@ -144,7 +173,7 @@ def required_trips(dames):
 def test_no_trip_between_a_gate_a_crane_and_a_bay_is_longer_than_250_moves(dames):
     """Every leg in both directions: gate in -> bay, bay -> gate out, crane <-> bay, gate <-> crane."""
     graph = build_graph(dames)
-    cranes = [pos for _, pos in dames.berths["B1"]]
+    cranes = [pos for berth in dames.berths.values() for _, pos in berth]
     gates_in = [c.pos for c in dames.gate_cells("in")]
     gates_out = [c.pos for c in dames.gate_cells("out")]
     bays = [p for block in dames.blocks.values() for p in block.transfer_points]
@@ -164,9 +193,9 @@ def test_no_trip_between_a_gate_a_crane_and_a_bay_is_longer_than_250_moves(dames
 
 
 def test_a_crane_reaches_the_block_beside_it_without_circling_the_site(dames):
-    """The quay lane flows east, so the way down to the yard is a fork onto the apron lane (y = 33).
+    """The quay flows east, so the way down to the yard is the fork at x = 57 into the east column.
 
-    Without the fork at x = 57 this trip is 166 moves instead of 108.
+    Without it this trip is 166 moves instead of 108.
     """
     qc1 = dict(dames.berths["B1"])["QC1"]
     a1 = dames.blocks["A1"].transfer_points
@@ -174,30 +203,42 @@ def test_a_crane_reaches_the_block_beside_it_without_circling_the_site(dames):
     assert len(dames.shortest_path(a1[0], qc1)) - 1 < 60  # back by the west column
 
 
+def test_the_east_cranes_reach_the_yard_by_the_return_lane(dames):
+    """QC4 to QC6 drop onto the return lane (y = 32) at x = 76, 90 or 104 and ride it west to the east column."""
+    qc4 = dict(dames.berths["B2"])["QC4"]
+    path = dames.shortest_path(qc4, (57, 32))
+    assert len(path) - 1 == 32 and (76, 33) in path and (76, 32) in path
+    qc6 = dict(dames.berths["B2"])["QC6"]
+    assert len(dames.shortest_path(qc6, (57, 32))) - 1 == 54
+
+
 def test_gate_in_to_gate_out_is_a_short_hop(dames):
     assert len(dames.shortest_path((80, 0), (84, 0))) - 1 < 100
 
 
 def test_north_west_yard_is_reached_without_circling_the_site(dames):
-    """The east branch of the outbound road (y = 32) feeds it; without that branch the way in is over 200 moves."""
+    """The return lane's east branch (x = 104 on, y = 32) feeds it; without it the way in is over 200 moves."""
     for block_id in ("N1", "N4"):
         point = dames.blocks[block_id].transfer_points[0]
         assert len(dames.shortest_path((80, 0), point)) - 1 < 100
 
 
-@pytest.mark.parametrize("cell", [(80, 3), (40, 34)])
+@pytest.mark.parametrize("cell", [(80, 3), (57, 20)])  # the gate-in column, the east column
 def test_closing_a_road_cell_is_reported_as_a_warning(dames, cell):
     closed = dames.with_closures({cell})
     assert closed.warnings and all(w.startswith("rule 12:") for w in closed.warnings)
     assert dames.warnings == ()
 
 
-def test_trip_lengths_are_the_ones_measured_before_the_charging_depot_was_added(dames):
-    """Recomputed independently from the compiled file (a separate script that imports nothing from here)."""
+def test_trip_lengths_are_the_ones_measured_for_the_v0_2_circulation(dames):
+    """Recomputed independently from the compiled file (a separate script that imports nothing from here).
+
+    v0.1 (one quay lane, no return lane) measured 15 / 86 / 228, mean 90.1.
+    """
     trips = required_trips(dames)
     assert len(trips) == 6704 and None not in trips
-    assert (min(trips), statistics.median(trips), max(trips)) == (15, 86, 228)
-    assert round(statistics.mean(trips), 1) == 90.1
+    assert (min(trips), statistics.median(trips), max(trips)) == (15, 84, 211)
+    assert round(statistics.mean(trips), 1) == 87.6
     qc1 = dict(dames.berths["B1"])["QC1"]
     assert len(dames.shortest_path(qc1, dames.blocks["A1"].transfer_points[0])) - 1 == 108
 
@@ -205,28 +246,44 @@ def test_trip_lengths_are_the_ones_measured_before_the_charging_depot_was_added(
 # ---- charging, buffers and yard cranes ------------------------------------------------
 
 
-def test_six_charging_stations_sit_in_a_depot_beside_the_east_column(dames):
+def test_twelve_charging_stations_in_two_depots(dames):
     assert [(c.attrs["id"], c.pos) for c in dames.charging_stations()] == CHARGERS
     assert {c.exits for c in dames.charging_stations()} == {("S",)}
     assert dames.validate() == []
 
 
-def test_the_depot_is_a_loop_so_six_parked_vehicles_cut_nothing_off(dames):
-    """Rule 15 on the real map: close all six stations as if each held a vehicle and nothing is stranded."""
+def test_each_depot_is_a_loop_so_twelve_parked_vehicles_cut_nothing_off(dames):
+    """Rule 15 on the real map: close every station as if each held a vehicle and nothing is stranded."""
     stations = {c.pos for c in dames.charging_stations()}
     assert dames.with_closures(stations).warnings == ()
 
 
-def test_the_depot_is_not_a_shortcut(dames):
-    """From the fork at (57, 8) back to the road at (57, 6): 2 moves along the road, 6 through the depot."""
+def test_a_depot_is_not_a_shortcut(dames):
+    """East depot: fork (57, 8) to (57, 6) is 2 moves on the road, 6 through the depot.
+    Return-lane depot: fork (95, 32) to (86, 32) is 9 on the road, 17 through the depot."""
     assert len(dames.shortest_path((57, 8), (57, 6))) - 1 == 2
     assert len(dames.with_closures({(57, 7)}).shortest_path((57, 8), (57, 6))) - 1 == 6
+    assert len(dames.shortest_path((95, 32), (86, 32))) - 1 == 9
+    assert len(dames.with_closures({(94, 32)}).shortest_path((95, 32), (86, 32))) - 1 == 17
 
 
-def test_every_transfer_point_holds_two_containers_for_now(dames):
-    """A placeholder until the yard and quay owners say what a real buffer holds."""
-    assert {c.attrs["buffer_capacity"] for c in dames.cells("transfer_point")} == {2}
-    assert {b.buffer_capacity for b in dames.blocks.values()} == {2}
+def test_the_passing_lane_gets_a_vehicle_past_a_queue(dames):
+    """With vehicles waiting in front of CH1 to CH3, the passing lane (y = 9) still reaches CH4."""
+    queue = {(59, 8), (60, 8), (61, 8)}
+    path = dames.with_closures(queue).shortest_path((57, 8), (62, 7))
+    assert path is not None and (59, 9) in path and (62, 8) in path
+    access = [x for x in range(59, 65) if dames.cell(x, 8).type == "lane"]   # beyond the entrance cell (58, 8)
+    passing = [x for x in range(58, 65) if dames.cell(x, 9).type == "lane"]
+    assert len(access) + len(passing) == 13  # cells a queue can stand on before it blocks the entrance (7 in v0.1)
+    assert dames.exits(58, 8) == ["N", "E"] and dames.exits(61, 9) == ["E", "S"]
+
+
+def test_handovers_are_coupled_so_nothing_waits_on_the_ground(dames):
+    """An RTG lifts straight between the stack and the vehicle in its truck lane, and a quay crane with plain
+    AGVs does the same, so buffer_capacity is 0 at every transfer point."""
+    assert {c.attrs["buffer_capacity"] for c in dames.cells("transfer_point")} == {0}
+    assert {b.buffer_capacity for b in dames.blocks.values()} == {0}
+    assert {c.buffer_capacity for c in dames.quay_cranes.values()} == {0}
 
 
 def test_each_yard_crane_has_its_blocks_and_its_reach(dames):
@@ -267,7 +324,7 @@ def test_files_are_what_the_generator_writes(dames_path, tmp_path, capsys):
 
 def test_a_layout_that_does_not_load_writes_nothing(tmp_path, capsys):
     module = load_generator()
-    module.QUAY_FORKS = []  # leaves the east end of the apron lane with nothing feeding it: rule 6
+    module.RETURN_FORKS = []  # leaves the return lane east of the exit road with nothing feeding it: rule 6
     out = tmp_path / "broken.json"
     assert module.main(["build_dames_point.py", str(out)]) == 1
     assert list(tmp_path.iterdir()) == []
@@ -296,14 +353,13 @@ def test_render_draws_the_stations_the_buffers_and_each_crane_reach(dames):
     ax = fig.add_subplot(111)
     render_2d(compiled, ax=ax)
     assert {f"RTG{n}" for n in range(1, 7)} <= {t.get_text() for t in ax.texts}
-    assert len([p for p in ax.patches if isinstance(p, Polygon)]) == 6  # one bolt per station
+    assert len([p for p in ax.patches if isinstance(p, Polygon)]) == 12  # one bolt per station
     assert len([p for p in ax.patches if isinstance(p, Rectangle)]) == 6  # one reach box per yard crane
-    hatched = [c for c in ax.collections if c.get_hatch() == "////"]
-    assert len(hatched) == 1 and len(hatched[0].get_paths()) == 425  # every transfer point holds two
+    assert [c for c in ax.collections if c.get_hatch() == "////"] == []  # no ground buffers anywhere
     _legend(ax, compiled)
-    assert {t.get_text() for t in ax.get_legend().get_texts()} >= {
-        "charging station", "transfer buffer", "yard crane reach",
-    }
+    legend = {t.get_text() for t in ax.get_legend().get_texts()}
+    assert legend >= {"charging station", "transfer point (vehicle stands here under the crane)", "yard crane reach"}
+    assert "transfer point with ground buffer" not in legend
 
 
 def test_render_shows_the_marsh_in_its_own_colour(dames):

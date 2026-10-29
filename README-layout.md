@@ -13,7 +13,7 @@ Python 3.11+. Depends on `pydantic`, `networkx` and `matplotlib` (plus `pytest` 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-pytest                             # 189 tests, a few seconds
+pytest                             # 214 tests, a few seconds
 python examples/demo.py            # prints a tour and writes layout.png
 ```
 
@@ -55,7 +55,8 @@ to the map. Everything returned from it is a copy or read-only.
 | `slot(slot_id)`, `slots_in_block(block_id)` | slot cell; slot ids ordered by bay, then row |
 | `blocks` | `{block_id: Block}` (a `Block` has `buffer_capacity`) |
 | `yard_cranes` | `{crane_id: YardCrane}`: the blocks each crane serves and its reach rectangle |
-| `berths` | `{berth_id: ((crane_id, (x, y)), ...)}` |
+| `quay_cranes` | `{crane_id: QuayCrane}`: berth, `x`, every transfer lane under the crane, `buffer_capacity` |
+| `berths` | `{berth_id: ((crane_id, (x, y)), ...)}`, the transfer point in each crane's own column |
 | `with_closures(cells)` | new `Layout` with exactly those cells closed (replace, not add) |
 | `closures`, `warnings` | current closed cells; rule 12 warnings for them |
 | `shortest_path(a, b)` | fewest-move path, both ends included, or `None` |
@@ -112,11 +113,11 @@ imagery and written down as numbers in `tools/build_dames_point.py`.
 | | |
 |---|---|
 | Grid | 112 x 43 cells (1,680 m by 645 m). The wharf runs along x with the river on top; column 0 is the south-east end of the site and row 0 the land side |
-| Berth | `B1`, 100 cells = 1,500 m of the real 1,525 m. Six quay cranes `QC1` to `QC6`, 17 cells (255 m) apart |
+| Quay | 100 cells = 1,500 m of the real 1,525 m, split into `B1` (`QC1` to `QC3`) and `B2` (`QC4` to `QC6`) at x = 55/56 as a placeholder for the ship arrival owner. Cranes 17 cells (255 m) apart, each with four transfer lanes (x - 1 to x + 2) where a vehicle waits for the crane |
 | Yard | 27 blocks, 419 bays, 786 ground slots, max tier 5: the south-east yard `A1` to `G3`, strip blocks `H1` to `H4` along the apron, the north-west yard `N1` to `N4` |
 | Yard cranes | `RTG1` to `RTG3` take the three block columns of rows A to E, `RTG4` rows F and G, `RTG5` the strips, `RTG6` the north-west yard. Each has a reach rectangle (`layout.yard_cranes`), drawn as a dashed box |
-| Charging | one depot of six stations, `CH1` to `CH6` at (59, 7) to (64, 7), on a loop beside the east column |
-| Transfer buffers | every transfer point holds 2 containers (`buffer_capacity`), drawn hatched |
+| Charging | two depots of six stations, each with a passing lane: `CH1` to `CH6` at (59, 7) to (64, 7) beside the east column, `CH7` to `CH12` at (93, 29) to (88, 29) below the return lane |
+| Transfer buffers | none: `buffer_capacity` is 0 everywhere, a coupled handover (an RTG lifts straight to the vehicle in its truck lane, a quay crane to the vehicle waiting under it) |
 | Gates | in: `G_IN1` (80, 0), `G_IN2` (81, 0). out: `G_OUT1` (84, 0), `G_OUT2` (85, 0) |
 | Not roads | the marsh and ponds in the middle (`blocked`, reason `exclusion`) and the gate buildings (reason `building`) |
 
@@ -124,22 +125,33 @@ imagery and written down as numbers in `tools/build_dames_point.py`.
 where the cells came from. It carries the imagery credit (Airbus, Maxar Technologies, Google).
 
 **How vehicles move.** Every road is one way, so the arrows in the picture are the whole
-traffic plan. Trucks come in at a gate-in lane, go north to the apron road and west to the east
-column, which feeds the service lane under each block. The service lanes of the south-east
-yard flow west. Three roads carry traffic north out of the yard: the west column and two aisles
-between block columns. They join the outbound road, which runs east and south to the gate-out
-lanes, and the quay lane, which runs east past all six cranes. The quay lane forks south in four
-places (x = 57, 86, 96 and 104) so a crane reaches the yard without circling the site. Where two
-roads meet, the cell has two exits.
+traffic plan. The quay lane and a bypass lane beside it both run east past all six cranes, and a
+vehicle may change lane at any cell: it waits for a crane in one of the crane's four transfer
+lanes while the traffic behind it passes on the bypass. From the bypass, forks drop south at
+x = 57 (the east column, which feeds the service lane under each south-east block), at 76, 90
+and 104 (onto the return lane, y = 32, which runs west to the east column so the east cranes
+reach the yard without circling the site) and at 96 (the exit road). The service lanes of the
+south-east yard flow west. Three roads carry traffic north out of the yard: the west column and
+two aisles between block columns; they join the outbound road, the bypass and the quay. Trucks
+come in at a gate-in lane, go north up the inbound road and turn west onto the return lane for
+the yard, or carry on to the bypass for the north-west yard; they leave by the south road
+(y = 5) from the foot of the east column to the gate-out lanes. Where two roads meet, the cell
+has two exits.
 
-The charging depot is a loop off the east column: a fork at (57, 8) leads east, the stations are entered
-from the north and left to the south, and the exit lane rejoins the column at (57, 6). A loop at the east
-end lets a vehicle go round the stations, so a charging vehicle never blocks the road. Going through the
-depot costs 6 moves where the road costs 2, so it is not a shortcut. The six stations and the 2-container
-buffers are placeholders for the AGV, container stacking and ship arrival owners to confirm.
+Each charging depot is a loop of four rows beside a road: a passing lane and an access lane
+side by side, the stations below the access lane, and an exit lane back to the road. A vehicle
+in the passing lane drives past one waiting in the access lane and drops in further along, so a
+queue at the first station does not block the others. The east depot forks off the east column
+at (57, 8) and rejoins it at (57, 6); the second forks off the return lane at (95, 32) and drains
+into the inbound road at (86, 28). Each is a detour (6 moves against 2; 17 against 9), so it is
+not a shortcut, and with all twelve stations occupied the roads still connect. Twelve stations
+is a placeholder for the AGV owner to confirm. The second depot's site was chosen by measuring
+the charging detour from every transfer point for four candidate sites (the spec has the table);
+the bottom-left site the group suggested saved 3 percent, this one saves 21.
 
-One-way roads make trips long. The longest leg between a gate, a block and a crane is about
-230 moves (3.4 km); a test fails if any leg goes over 250.
+One-way roads make trips long. The longest leg between a gate, a block and a crane is 211 moves
+(3.2 km); a test fails if any leg goes over 250. Over the 6,704 gate, crane and bay trips the
+median is 84 moves (v0.1: 86, longest 228).
 
 **Changing it.** Edit the numbers in `tools/build_dames_point.py` and run it. It checks the
 layout with `load_layout` first and writes nothing if a rule fails; otherwise it rewrites both
@@ -152,7 +164,24 @@ them in the same change.
 python tools/build_dames_point.py
 ```
 
-## Limits in v0.1
+## 3D viewer
+
+`viewer3d/index.html` draws Dames Point in 3D with Three.js, from the compiled JSON only: stacked yard
+slots, the six quay cranes and six RTGs, both charging depots, lane arrows, and a few demo vehicles.
+Drag to orbit, scroll to zoom, click a cell to read it, and use the panel to fly to a crane or depot,
+change the example yard fill, or toggle layers. `window.portViewer.cellCenter(x, y)` gives a cell's 3D
+centre for anything drawn on top.
+
+```bash
+python -m http.server            # from the repo root, then open http://localhost:8000/viewer3d/
+python tools/bundle_viewer.py    # or: one self-contained file, viewer3d/dames-point-3d.html
+```
+
+The demo vehicles follow `viewer3d/demo-routes.json`, written by `tools/build_viewer_routes.py` from
+`Layout.shortest_path`; a test checks every step is a legal move. They are examples, not traffic: no
+dispatch and no collisions. Re-run both tools after changing the map.
+
+## Limits in v0.2
 
 - Width and height are at most 500 cells each.
 - A quay runs east-west only (a berth has one `quay_y` row; cranes sit at an `x` on it).
@@ -163,18 +192,24 @@ python tools/build_dames_point.py
 - Unknown keys are errors. For remarks while tracing a real terminal, use `"notes": "..."`,
   which is allowed on the file and on every entry and is never read.
 - `with_closures` replaces the closed set; it does not add to it.
-- `buffer_capacity` is a whole number of at least 1 (1 means no buffer). The layout stores it and never
-  enforces it: it holds no containers.
+- `buffer_capacity` is a whole number of at least 0 (0, the default, is a coupled handover: the crane
+  lifts straight between the vehicle and the stack or ship). The layout stores it and never enforces
+  it: it holds no containers.
+- A quay crane's `transfer_lanes` (default 1) are quay cells of its berth centred on its `x`; an even
+  count leans east. Two cranes' lanes may not overlap (rule 8).
 - A charger goes on a plain lane cell, and with every charger occupied the road must still connect
   (rules 14 and 15). Put stations in a pocket or loop beside the road.
 
-## Schema 1.1
+## Schema 1.1 and 1.2
 
-Charging stations, `buffer_capacity` and yard crane reach arrived in schema 1.1. Authored files marked
-`"1.0"` still load, and `"1.1"` adds `chargers` and `buffer_capacity`. The compiled file always says
-`"1.1"`: it adds the `charging_station` cell type, `buffer_capacity` on transfer points, blocks and berth
-cranes, and the top-level `chargers` and `yard_cranes`. If you read the compiled JSON and keep your own list of
-drivable cell types, add `charging_station`; if you call the Python API you need no change.
+Charging stations, `buffer_capacity` and yard crane reach arrived in schema 1.1; `transfer_lanes` on a quay
+crane, and a `buffer_capacity` of 0 as the default, in 1.2. Authored files marked `"1.0"` or `"1.1"` still
+load (a 1.1 file that left `buffer_capacity` out now compiles as 0 instead of 1). The compiled file always
+says `"1.2"`: it has the `charging_station` cell type, `buffer_capacity` on transfer points, blocks and
+berth cranes, `x` and `transfer_points` (one per lane) on each berth crane, and the top-level `chargers`
+and `yard_cranes`. If you read the compiled JSON and keep your own list of drivable cell types, add
+`charging_station`; if you assumed one transfer point per quay crane, read `transfer_points`; if you call
+the Python API you need no change.
 
 ## The rules
 
@@ -211,7 +246,7 @@ terminal_layout/
   render.py     render_2d
 layouts/        demo-12x8.json, dames-point.json, their compiled forms, dames-point-trace.png
 tools/          build_dames_point.py: writes and checks the Dames Point files
-tests/          189 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1
+tests/          214 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2
 examples/demo.py
 docs/           layout-spec.md (the spec this was built from), demo-12x8.png, dames-point.png
 ```
@@ -221,13 +256,17 @@ docs/           layout-spec.md (the spec this was built from), demo-12x8.png, da
 - Call `neighbors`, `is_traversable` and `shortest_path`; do not re-derive movement from `exits`.
 - Read `to_json()` if you want plain data; read `Layout` if you want the API.
 - Cell order, slot order and exit order are fixed, so runs with the same seed repeat.
-- A transfer point is an ordinary lane cell on a one-way road (the service lane under each
-  bay). A vehicle being served there stands in that road and blocks the ones behind it, unless
-  the traffic module lets it wait elsewhere or treats service as a delay while it keeps moving.
-  A route to a bay passes over the transfer points of the bays before it on the same lane.
+- A yard transfer point is an ordinary lane cell on a one-way road (the service lane under each
+  bay, which is the RTG's truck lane). A vehicle being served there stands in that lane and blocks
+  the ones behind it, unless the traffic module treats service as a delay while it keeps moving.
+  A route to a bay passes over the transfer points of the bays before it on the same lane. At the
+  quay a waiting vehicle blocks only its own transfer lane; the rest pass on the bypass lane.
+- The quay lane and the bypass lane are the one place a vehicle may move in both directions
+  between two cells (a lane change at any x). Everywhere else is one way.
 - A charging station is a lane cell with an `id`. `neighbors` and `is_traversable` treat it like any lane
   cell, so a vehicle can drive through it. Whether it may stop there, for how long and how fast it charges
   is for the AGV module.
-- `buffer_capacity` on a transfer point is a number the layout stores and never enforces. What happens when
-  a buffer is full belongs to the modules that move containers.
+- `buffer_capacity` on a transfer point is a number the layout stores and never enforces. 0 means the vehicle
+  waits for the crane and nothing is set on the ground; above 0, what happens when the buffer is full belongs
+  to the modules that move containers.
 - Do not mutate anything you get back. You can't: it is frozen.

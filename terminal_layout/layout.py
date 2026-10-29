@@ -17,6 +17,7 @@ from .model import (
     Core,
     LayoutError,
     Point,
+    QuayCrane,
     YardCrane,
     step,
     thaw,
@@ -249,8 +250,17 @@ class Layout:
 
     @property
     def berths(self) -> dict[str, tuple[tuple[str, Point], ...]]:
-        """For each berth id, its cranes as (crane id, transfer point (x, y))."""
+        """For each berth id, its cranes as (crane id, the transfer point in the crane's own
+        column), ordered along the quay. A crane's other transfer lanes are on ``quay_cranes``.
+        """
         return dict(self._core.berths)
+
+    @property
+    def quay_cranes(self) -> dict[str, QuayCrane]:
+        """Quay cranes by id, ordered by id: berth, x, every transfer point under the crane
+        (one per lane, ordered by x) and the ground buffer at each.
+        """
+        return dict(self._core.quay_cranes)
 
     @property
     def yard_cranes(self) -> dict[str, YardCrane]:

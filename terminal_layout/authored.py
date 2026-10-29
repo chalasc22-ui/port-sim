@@ -10,7 +10,7 @@ from collections.abc import Iterator
 from typing import NamedTuple
 
 from .model import Point
-from .schema import BlockEntry, LayoutFile
+from .schema import BlockEntry, CraneEntry, LayoutFile
 
 Rect = tuple[Point, Point]
 
@@ -52,6 +52,16 @@ def service_pos(block: BlockEntry, bay: int) -> Point:
         return (ox + bay - 1, y)
     x = ox - 1 if block.service_side == "W" else ox + block.rows
     return (x, oy + bay - 1)
+
+
+def crane_lane_cells(crane: CraneEntry, quay_y: int) -> list[Point]:
+    """The quay cells under a crane, by x: ``transfer_lanes`` cells centred on its x.
+
+    With 1 lane it is the crane's own column; with 4 it is x - 1 to x + 2; an odd count
+    puts the same number on each side.
+    """
+    first = crane.x - (crane.transfer_lanes - 1) // 2
+    return [(first + i, quay_y) for i in range(crane.transfer_lanes)]
 
 
 def footprints(model: LayoutFile) -> list[Footprint]:

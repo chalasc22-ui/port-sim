@@ -108,7 +108,24 @@ class Block:
     crane: str | None
     slots: tuple[str, ...]
     transfer_points: tuple[Point, ...]
-    buffer_capacity: int = 1  # containers that can wait at each of its transfer points
+    buffer_capacity: int = 0  # containers that may be set down at each of its transfer points
+
+
+@dataclass(frozen=True)
+class QuayCrane:
+    """A ship-to-shore crane on a berth and the transfer points under it.
+
+    ``transfer_points`` are the quay cells, side by side along the quay and ordered by x,
+    where a vehicle stands for the handover; the one at ``x`` is the crane's own column.
+    ``buffer_capacity`` is the number of containers that may be set on the ground at each of
+    them; 0 means the crane lifts straight between the ship and a waiting vehicle.
+    """
+
+    id: str
+    berth: str
+    x: int
+    transfer_points: tuple[Point, ...]
+    buffer_capacity: int = 0
 
 
 @dataclass(frozen=True)
@@ -141,3 +158,4 @@ class Core:
     slot_index: Mapping[str, Point]
     source: Mapping[str, Any]  # the authored file as parsed, so a Layout can be rebuilt
     yard_cranes: Mapping[str, YardCrane] = field(default_factory=dict)
+    quay_cranes: Mapping[str, QuayCrane] = field(default_factory=dict)

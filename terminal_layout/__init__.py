@@ -2,7 +2,16 @@
 
 from .layout import Layout
 from .loader import load_layout
-from .model import Block, Cell, LayoutError, YardCrane
+from .model import Block, Cell, LayoutError, QuayCrane, YardCrane
 
-__version__ = "0.1.0"
-__all__ = ["load_layout", "Layout", "Cell", "Block", "YardCrane", "LayoutError", "__version__"]
+__version__ = "0.2.0"
+__all__ = [
+    "load_layout",
+    "Layout",
+    "Cell",
+    "Block",
+    "QuayCrane",
+    "YardCrane",
+    "LayoutError",
+    "__version__",
+]

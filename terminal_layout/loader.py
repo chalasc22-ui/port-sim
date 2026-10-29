@@ -19,7 +19,14 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-from .authored import authored_errors, block_rect, rect_cells, service_pos, slot_pos
+from .authored import (
+    authored_errors,
+    block_rect,
+    crane_lane_cells,
+    rect_cells,
+    service_pos,
+    slot_pos,
+)
 from .layout import Layout
 from .model import (
     DIRECTIONS,
@@ -28,6 +35,7 @@ from .model import (
     Core,
     LayoutError,
     Point,
+    QuayCrane,
     YardCrane,
     freeze,
     step,
@@ -189,28 +197,40 @@ def _convert_block_transfers(
 
 def _convert_berth_transfers(
     cells: _Cells, berths: list[BerthEntry], errors: list[str]
-) -> dict[str, list[tuple[str, Point]]]:
-    found: dict[str, list[tuple[str, Point]]] = {berth.id: [] for berth in berths}
+) -> dict[str, QuayCrane]:
+    """Turn the quay cells under each crane into its transfer points (one per lane)."""
+    cranes: dict[str, QuayCrane] = {}
     for berth in berths:
         for crane in berth.cranes:
-            point = (crane.x, berth.quay_y)
-            cell = cells.get(point)
-            if cell is not None and cell.type == "transfer_point":
-                errors.append(
-                    f"rule 8: berth {berth.id} crane {crane.id} shares its quay cell {point} "
-                    f"with {_serves_text(cell.attrs['serves'])}"
-                )
-            elif cell is None or cell.type != "quay" or cell.attrs["berth"] != berth.id:
-                errors.append(
-                    f"rule 8: berth {berth.id} crane {crane.id} has no quay cell of berth "
-                    f"{berth.id} under it (expected at {point}, {_found(cell)})"
-                )
-            else:
-                _make_transfer_point(
-                    cells, point, {"berth": berth.id, "crane": crane.id}, crane.buffer_capacity
-                )
-                found[berth.id].append((crane.id, point))
-    return found
+            lanes = crane_lane_cells(crane, berth.quay_y)
+            made: list[Point] = []
+            for number, point in enumerate(lanes, 1):
+                which = f"lane {number} of {len(lanes)}" if len(lanes) > 1 else "it"
+                cell = cells.get(point)
+                if cell is not None and cell.type == "transfer_point":
+                    errors.append(
+                        f"rule 8: berth {berth.id} crane {crane.id} shares its quay cell {point} "
+                        f"with {_serves_text(cell.attrs['serves'])}"
+                        + (f" ({which})" if len(lanes) > 1 else "")
+                    )
+                elif cell is None or cell.type != "quay" or cell.attrs["berth"] != berth.id:
+                    errors.append(
+                        f"rule 8: berth {berth.id} crane {crane.id} has no quay cell of berth "
+                        f"{berth.id} under {which} (expected at {point}, {_found(cell)})"
+                    )
+                else:
+                    _make_transfer_point(
+                        cells, point, {"berth": berth.id, "crane": crane.id}, crane.buffer_capacity
+                    )
+                    made.append(point)
+            cranes[crane.id] = QuayCrane(
+                id=crane.id,
+                berth=berth.id,
+                x=crane.x,
+                transfer_points=tuple(made),
+                buffer_capacity=crane.buffer_capacity,
+            )
+    return cranes
 
 
 def _convert_chargers(cells: _Cells, chargers: list[ChargerEntry], errors: list[str]) -> None:
@@ -259,17 +279,17 @@ def _yard_cranes(
     return cranes
 
 
-def _mark_cranes(cells: _Cells, berth_points: dict[str, list[tuple[str, Point]]]) -> None:
-    """Put the crane id on the berth cell directly behind each quay transfer point."""
-    for berth_id, cranes in berth_points.items():
-        for crane_id, point in cranes:
-            for direction in ("N", "S"):
-                target = step(point, direction)
-                cell = cells.get(target)
-                if cell is not None and cell.type == "berth" and cell.attrs["berth"] == berth_id:
-                    attrs = {**thaw(cell.attrs), "crane": crane_id}
-                    cells[target] = replace(cell, attrs=freeze(attrs))
-                    break
+def _mark_cranes(cells: _Cells, cranes: dict[str, QuayCrane], quay_ys: dict[str, int]) -> None:
+    """Put the crane id on the berth cell directly behind each crane's own quay column."""
+    for crane in cranes.values():
+        point = (crane.x, quay_ys[crane.berth])
+        for direction in ("N", "S"):
+            target = step(point, direction)
+            cell = cells.get(target)
+            if cell is not None and cell.type == "berth" and cell.attrs["berth"] == crane.berth:
+                attrs = {**thaw(cell.attrs), "crane": crane.id}
+                cells[target] = replace(cell, attrs=freeze(attrs))
+                break
 
 
 def compile_core(model: LayoutFile) -> tuple[Core, list[str]]:
@@ -283,9 +303,10 @@ def compile_core(model: LayoutFile) -> tuple[Core, list[str]]:
     slots = _paint_blocks(cells, model)
     errors: list[str] = []
     block_points = _convert_block_transfers(cells, model.blocks, errors)
-    berth_points = _convert_berth_transfers(cells, model.berths, errors)
+    quay_cranes = _convert_berth_transfers(cells, model.berths, errors)
     _convert_chargers(cells, model.chargers, errors)
-    _mark_cranes(cells, berth_points)
+    quay_ys = {b.id: b.quay_y for b in model.berths}
+    _mark_cranes(cells, quay_cranes, quay_ys)
     blocks = {
         b.id: Block(
             id=b.id,
@@ -301,7 +322,12 @@ def compile_core(model: LayoutFile) -> tuple[Core, list[str]]:
         for b in sorted(model.blocks, key=lambda b: b.id)
     }
     berths = {
-        b.id: tuple(sorted(berth_points[b.id], key=lambda item: item[1]))
+        b.id: tuple(
+            sorted(
+                ((c.id, (c.x, b.quay_y)) for c in quay_cranes.values() if c.berth == b.id),
+                key=lambda item: item[1],
+            )
+        )
         for b in sorted(model.berths, key=lambda b: b.id)
     }
     ordered_cells = dict(sorted(cells.items()))
@@ -322,5 +348,6 @@ def compile_core(model: LayoutFile) -> tuple[Core, list[str]]:
         slot_index=MappingProxyType(slot_index),
         source=freeze(model.model_dump(mode="json")),
         yard_cranes=MappingProxyType(_yard_cranes(model.blocks, block_points)),
+        quay_cranes=MappingProxyType(dict(sorted(quay_cranes.items()))),
     )
     return core, errors

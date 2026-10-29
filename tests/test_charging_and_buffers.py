@@ -1,4 +1,5 @@
-"""Schema 1.1: charging stations, transfer-buffer capacity and yard crane reach (rules 14 and 15)."""
+"""Schema 1.1 and 1.2: charging stations, transfer buffers, quay transfer lanes and yard crane reach
+(rules 14 and 15)."""
 
 import copy
 import dataclasses
@@ -8,7 +9,7 @@ import pytest
 from matplotlib.figure import Figure
 from matplotlib.patches import Polygon, Rectangle
 
-from terminal_layout import LayoutError, YardCrane
+from terminal_layout import LayoutError, QuayCrane, YardCrane
 from terminal_layout.export import format_compiled
 from terminal_layout.loader import layout_from_dict
 from terminal_layout.render import _legend, render_2d
@@ -112,11 +113,10 @@ def test_the_demo_has_no_stations(demo):
 # ---- schema versions ---------------------------------------------------------------
 
 
-def test_authored_1_0_and_1_1_both_load_and_both_compile_as_1_1(data):
-    assert data["schema_version"] == "1.0"
-    assert layout_from_dict(copy.deepcopy(data)).to_json()["schema_version"] == "1.1"
-    data["schema_version"] = "1.1"
-    assert layout_from_dict(data).to_json()["schema_version"] == "1.1"
+@pytest.mark.parametrize("version", ["1.0", "1.1", "1.2"])
+def test_every_authored_version_loads_and_compiles_as_1_2(data, version):
+    data["schema_version"] = version
+    assert layout_from_dict(data).to_json()["schema_version"] == "1.2"
 
 
 def test_an_unknown_schema_version_is_rule_10(broken):
@@ -210,12 +210,14 @@ def test_rule_15_waits_for_rule_14(broken):
 # ---- transfer-buffer capacity ----------------------------------------------------------
 
 
-def test_buffer_capacity_is_one_everywhere_unless_the_file_says_otherwise(demo):
-    assert {c.attrs["buffer_capacity"] for c in demo.cells("transfer_point")} == {1}
-    assert {b.buffer_capacity for b in demo.blocks.values()} == {1}
+def test_buffer_capacity_is_zero_everywhere_unless_the_file_says_otherwise(demo):
+    """0 is a coupled handover: the crane lifts straight between the vehicle and the stack or ship."""
+    assert {c.attrs["buffer_capacity"] for c in demo.cells("transfer_point")} == {0}
+    assert {b.buffer_capacity for b in demo.blocks.values()} == {0}
+    assert {c.buffer_capacity for c in demo.quay_cranes.values()} == {0}
     compiled = demo.to_json()
-    assert compiled["blocks"][0]["buffer_capacity"] == 1
-    assert [c["buffer_capacity"] for c in compiled["berths"][0]["cranes"]] == [1, 1]
+    assert compiled["blocks"][0]["buffer_capacity"] == 0
+    assert [c["buffer_capacity"] for c in compiled["berths"][0]["cranes"]] == [0, 0]
 
 
 def test_a_block_and_a_crane_can_set_their_own_capacity(data):
@@ -225,22 +227,93 @@ def test_a_block_and_a_crane_can_set_their_own_capacity(data):
     layout = layout_from_dict(data)
     assert layout.blocks["A"].buffer_capacity == 3
     assert {p.attrs["buffer_capacity"] for p in layout.transfer_points(block_id="A")} == {3}
-    assert [p.attrs["buffer_capacity"] for p in layout.transfer_points(berth_id="B1")] == [2, 1]  # QC1, QC2
+    assert [p.attrs["buffer_capacity"] for p in layout.transfer_points(berth_id="B1")] == [2, 0]  # QC1, QC2
     compiled = layout.to_json()
     assert compiled["blocks"][0]["buffer_capacity"] == 3
-    assert [c["buffer_capacity"] for c in compiled["berths"][0]["cranes"]] == [2, 1]
+    assert [c["buffer_capacity"] for c in compiled["berths"][0]["cranes"]] == [2, 0]
     assert compiled["cells"]["4,1"]["buffer_capacity"] == 3
 
 
-@pytest.mark.parametrize("value", [0, -1, 1.5])
-def test_rule_10_block_buffer_capacity_is_a_whole_number_of_at_least_one(broken, value):
+@pytest.mark.parametrize("value", [-1, 1.5, "2", True])
+def test_rule_10_block_buffer_capacity_is_a_whole_number_of_at_least_zero(broken, value):
     errors = broken(lambda d: d["blocks"][0].__setitem__("buffer_capacity", value))
     assert len(errors) == 1 and errors[0].startswith("rule 10: blocks[0].buffer_capacity")
 
 
 def test_rule_10_crane_buffer_capacity(broken):
-    errors = broken(lambda d: d["berths"][0]["cranes"][0].__setitem__("buffer_capacity", 0))
+    errors = broken(lambda d: d["berths"][0]["cranes"][0].__setitem__("buffer_capacity", -1))
     assert len(errors) == 1 and errors[0].startswith("rule 10: berths[0].cranes[0].buffer_capacity")
+
+
+def test_a_buffer_capacity_of_zero_is_allowed_and_means_coupled(data):
+    data["blocks"][0]["buffer_capacity"] = 0
+    data["berths"][0]["cranes"][0]["buffer_capacity"] = 0
+    assert {c.attrs["buffer_capacity"] for c in layout_from_dict(data).cells("transfer_point")} == {0}
+
+
+# ---- quay transfer lanes (schema 1.2) --------------------------------------------------------
+
+
+def test_one_transfer_lane_per_crane_unless_the_file_says_otherwise(demo):
+    assert demo.quay_cranes == {
+        "QC1": QuayCrane("QC1", "B1", 3, ((3, 5),), 0),
+        "QC2": QuayCrane("QC2", "B1", 8, ((8, 5),), 0),
+    }
+    assert demo.berths == {"B1": (("QC1", (3, 5)), ("QC2", (8, 5)))}
+
+
+def test_four_lanes_sit_one_west_and_two_east_of_the_crane_column(data):
+    data["schema_version"] = "1.2"
+    data["berths"][0]["cranes"][0]["transfer_lanes"] = 4
+    layout = layout_from_dict(data)
+    crane = layout.quay_cranes["QC1"]
+    assert crane.transfer_points == ((2, 5), (3, 5), (4, 5), (5, 5))
+    assert layout.berths["B1"] == (("QC1", (3, 5)), ("QC2", (8, 5)))  # berths keep the crane's own column
+    assert [p.pos for p in layout.transfer_points(berth_id="B1")] == [(2, 5), (3, 5), (4, 5), (5, 5), (8, 5)]
+    assert all(p.attrs["serves"] == {"berth": "B1", "crane": "QC1"} for p in layout.transfer_points(berth_id="B1")[:4])
+    assert not [e for e in layout.validate() if e.startswith("rule 9")]  # each lane is beside the berth
+    compiled = layout.to_json()["berths"][0]["cranes"][0]
+    assert compiled == {"id": "QC1", "x": 3, "transfer_point": [3, 5],
+                        "transfer_points": [[2, 5], [3, 5], [4, 5], [5, 5]], "buffer_capacity": 0}
+
+
+@pytest.mark.parametrize("lanes, xs", [(1, [3]), (2, [3, 4]), (3, [2, 3, 4]), (5, [1, 2, 3, 4, 5])])
+def test_an_odd_lane_count_is_centred_and_an_even_one_leans_east(data, lanes, xs):
+    data["berths"][0]["cranes"][0]["transfer_lanes"] = lanes
+    assert [p[0] for p in layout_from_dict(data).quay_cranes["QC1"].transfer_points] == xs
+
+
+def test_rule_8_lanes_of_two_cranes_may_not_overlap(broken):
+    def edit(d):
+        d["berths"][0]["cranes"][0]["transfer_lanes"] = 4   # QC1 at 3: x 2..5
+        d["berths"][0]["cranes"][1] = {"id": "QC2", "x": 6, "transfer_lanes": 4}  # x 5..8
+
+    errors = broken(edit)
+    assert errors == [
+        "rule 8: berth B1 crane QC2 shares its quay cell (5, 5) with berth B1 crane QC1 (lane 1 of 4)"
+    ]
+
+
+def test_rule_8_a_lane_must_be_a_quay_cell_of_the_berth(broken):
+    assert broken(lambda d: d["berths"][0]["cranes"][1].__setitem__("transfer_lanes", 4)) == []  # x 7..10: quay
+    errors = broken(lambda d: d["berths"][0]["cranes"][1].update({"x": 9, "transfer_lanes": 4}))  # x 8..11
+    assert errors == [
+        "rule 8: berth B1 crane QC2 has no quay cell of berth B1 under lane 4 of 4 "
+        "(expected at (11, 5), found a lane cell)"
+    ]
+
+
+@pytest.mark.parametrize("value", [0, -2, 1.5, "4"])
+def test_rule_10_transfer_lanes_is_a_whole_number_of_at_least_one(broken, value):
+    errors = broken(lambda d: d["berths"][0]["cranes"][0].__setitem__("transfer_lanes", value))
+    assert len(errors) == 1 and errors[0].startswith("rule 10: berths[0].cranes[0].transfer_lanes")
+
+
+def test_a_quay_crane_cannot_be_edited_and_the_dict_is_a_copy(demo):
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        demo.quay_cranes["QC1"].x = 4
+    demo.quay_cranes.clear()
+    assert list(demo.quay_cranes) == ["QC1", "QC2"]
 
 
 # ---- yard cranes -------------------------------------------------------------------------
@@ -271,7 +344,7 @@ def test_a_yard_crane_cannot_be_edited_and_the_dict_is_a_copy(demo):
 
 def test_compiled_form_carries_the_new_keys(depot):
     data = depot.to_json()
-    assert data["schema_version"] == "1.1"
+    assert data["schema_version"] == "1.2"
     assert list(data)[-2:] == ["chargers", "yard_cranes"]
     assert data["chargers"] == [{"id": "CH1", "cell": [10, 3]}, {"id": "CH2", "cell": [9, 3]}]
     assert data["cells"]["10,3"] == {"type": "charging_station", "exits": ["S"], "id": "CH1"}
@@ -323,7 +396,7 @@ def test_the_crane_reach_is_a_dashed_box_with_a_tag(depot):
     assert "RTG1" in {t.get_text() for t in ax.texts}
 
 
-def test_only_transfer_points_that_hold_more_than_one_container_are_hatched(data):
+def test_only_transfer_points_with_a_ground_buffer_are_hatched(data):
     ax = draw(layout_from_dict(copy.deepcopy(data)))
     assert [c for c in ax.collections if c.get_hatch() == "////"] == []
     data["schema_version"] = "1.1"
@@ -335,16 +408,16 @@ def test_only_transfer_points_that_hold_more_than_one_container_are_hatched(data
 
 def test_legend_names_only_what_is_on_the_map(data):
     plain = {t.get_text() for t in _legend_of(layout_from_dict(copy.deepcopy(data)))}
-    assert "transfer point" in plain and "yard crane reach" in plain
-    assert "charging station" not in plain and "transfer buffer" not in plain
+    assert "transfer point (vehicle stands here under the crane)" in plain and "yard crane reach" in plain
+    assert "charging station" not in plain and "transfer point with ground buffer" not in plain
 
     add_depot(data)
     data["blocks"][0]["buffer_capacity"] = 2
     for crane in data["berths"][0]["cranes"]:
         crane["buffer_capacity"] = 2
     full = {t.get_text() for t in _legend_of(layout_from_dict(data))}
-    assert {"charging station", "transfer buffer", "yard crane reach"} <= full
-    assert "transfer point" not in full  # every transfer point is a buffer here
+    assert {"charging station", "transfer point with ground buffer", "yard crane reach"} <= full
+    assert not any(t.startswith("transfer point (") for t in full)  # every transfer point has a buffer here
 
 
 def _legend_of(layout):

@@ -14,8 +14,10 @@ if TYPE_CHECKING:
 _LINE_PER_ITEM = ("grid", "cells", "blocks", "berths", "gates", "chargers", "yard_cranes", "closures")
 
 # Written into every compiled file. 1.1 added "chargers", "yard_cranes", "buffer_capacity"
-# and the "charging_station" cell type; a 1.0 reader that ignores unknown keys still works.
-COMPILED_VERSION = "1.1"
+# and the "charging_station" cell type; 1.2 adds "x" and "transfer_points" (one per lane) to
+# each quay crane and lets "buffer_capacity" be 0. A reader that ignores unknown keys still
+# works.
+COMPILED_VERSION = "1.2"
 
 
 def _is_plain(cell: Cell) -> bool:
@@ -63,8 +65,12 @@ def compiled_dict(layout: Layout) -> dict[str, Any]:
                 "cranes": [
                     {
                         "id": crane_id,
+                        "x": layout.quay_cranes[crane_id].x,
                         "transfer_point": list(point),
-                        "buffer_capacity": layout.cell(*point).attrs["buffer_capacity"],
+                        "transfer_points": [
+                            list(p) for p in layout.quay_cranes[crane_id].transfer_points
+                        ],
+                        "buffer_capacity": layout.quay_cranes[crane_id].buffer_capacity,
                     }
                     for crane_id, point in cranes
                 ],

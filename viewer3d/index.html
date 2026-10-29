@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- BUNDLE:HEAD-START -->
+<title>Dames Point 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one screen. The 3D yard fills the window; a control panel docks left on wide screens
+   and becomes a bottom sheet on phones. Labels float over the canvas. */
+:root {
+  --ground: #e8ebe7;      /* page and sky: overcast harbor light */
+  --panel: #f7f8f5;
+  --ink: #1c2422;
+  --ink-soft: #55615d;
+  --rule: #cfd5d0;
+  --signal: #d4581c;      /* port safety orange: transfer points, focus, active controls */
+  --signal-ink: #ffffff;
+  --hover: #eef0ec;
+  --sky: #dfe6e8;
+  --display: "Big Shoulders Stencil Display", "Arial Narrow", Impact, sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --label-bg: rgba(247, 248, 245, 0.88);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #101716; --panel: #172120; --ink: #e6ece8; --ink-soft: #9aa8a2; --rule: #2c3a37;
+    --signal: #f07a3a; --signal-ink: #1a0d05; --hover: #1f2b29; --sky: #0e1619;
+    --label-bg: rgba(23, 33, 32, 0.86); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #101716; --panel: #172120; --ink: #e6ece8; --ink-soft: #9aa8a2; --rule: #2c3a37;
+  --signal: #f07a3a; --signal-ink: #1a0d05; --hover: #1f2b29; --sky: #0e1619;
+  --label-bg: rgba(23, 33, 32, 0.86); color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 15px/1.45 var(--body); overflow: hidden; }
+.app { position: relative; height: 100%; display: grid; grid-template-columns: 320px 1fr; }
+.stage { position: relative; min-width: 0; overflow: hidden; background: var(--sky); }
+#scene { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#scene:active { cursor: grabbing; }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.tag { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font: 600 11px/1 var(--mono);
+  color: var(--ink); background: var(--label-bg); padding: 3px 5px; border-radius: 3px; letter-spacing: 0.02em; }
+.tag.block { font: 800 17px/1 var(--display); background: none; padding: 0; color: #f4f6f2;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.55); letter-spacing: 0.04em; }
+.tag.crane { background: #b8352a; color: #fff; }
+.tag.rtg { background: #2a3d7a; color: #fff; }
+.tag.depot { background: #6a4fc0; color: #fff; }
+.tag.berth { font: 800 22px/1 var(--display); background: none; color: #f4f6f2; text-shadow: 0 1px 3px rgba(0,30,50,0.6); }
+.tag.vehicle { font: 500 10px/1 var(--mono); background: var(--ink); color: var(--ground); }
+
+aside { position: relative; z-index: 2; background: var(--panel); border-right: 1px solid var(--rule);
+  overflow-y: auto; padding-block: 18px 24px; padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: 18px;
+  display: flex; flex-direction: column; gap: 20px; }
+h1 { margin: 0; font: 800 34px/0.95 var(--display); letter-spacing: 0.03em; text-transform: uppercase; text-wrap: balance; }
+.sub { margin: 6px 0 0; color: var(--ink-soft); font-size: 13px; }
+h2 { margin: 0 0 8px; font: 600 11px/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+section { display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+button, select { font: 500 13px/1 var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 4px; padding: 8px 10px; cursor: pointer; }
+button:hover, select:hover { background: var(--hover); }
+button[aria-pressed="true"] { background: var(--signal); color: var(--signal-ink); border-color: var(--signal); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+select { width: 100%; }
+.toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.toggles label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+input[type="checkbox"], input[type="range"] { accent-color: var(--signal); }
+input[type="range"] { width: 100%; }
+.slider-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
+.slider-head output { font: 500 13px var(--mono); font-variant-numeric: tabular-nums; }
+.note { margin: 0; font-size: 12px; color: var(--ink-soft); }
+.inspect { border: 1px solid var(--rule); border-radius: 4px; padding: 10px 12px; min-height: 92px; }
+.inspect .kind { font: 800 20px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.inspect .kind .sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: 2px; border-radius: 2px; }
+.inspect dl { margin: 8px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; }
+.inspect dt { color: var(--ink-soft); }
+.inspect dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin: 0; }
+.facts div { display: flex; flex-direction: column; }
+.facts dt { font-size: 12px; color: var(--ink-soft); order: 2; }
+.facts dd { margin: 0; font: 800 26px/1 var(--display); font-variant-numeric: tabular-nums; }
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 12px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 2px; flex: none; border: 1px solid rgba(0,0,0,0.15); }
+.vehicles { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.vehicles li { display: grid; grid-template-columns: 48px 1fr; gap: 6px; }
+.vehicles b { font-family: var(--mono); font-weight: 500; }
+.vehicles span { color: var(--ink-soft); min-width: 0; }
+.hint { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 12px; font-size: 12px; color: var(--ink-soft);
+  background: var(--label-bg); padding: 6px 8px; border-radius: 4px; pointer-events: none; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font: 600 14px var(--body); color: var(--ink-soft); }
+.panel-toggle { display: none; }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .stage { grid-row: 1; }
+  aside { grid-row: 2; max-height: 46vh; border-right: 0; border-top: 1px solid var(--rule);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); gap: 16px; }
+  aside.collapsed { max-height: 64px; overflow: hidden; }
+  .panel-toggle { display: inline-block; position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: 14px; }
+  h1 { font-size: 26px; padding-right: 72px; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+<!-- BUNDLE:HEAD-END -->
+</head>
+<body>
+<!-- BUNDLE:BODY-START -->
+<div class="app">
+  <aside id="panel" aria-label="Viewer controls">
+    <button class="panel-toggle" id="panel-toggle" type="button" aria-expanded="true">Hide</button>
+    <header>
+      <h1>Dames Point Terminal</h1>
+      <p class="sub">Terminal layout v0.2, schema 1.2. One cell is 15 m. Drag to orbit, scroll or pinch to zoom, right-drag to pan.</p>
+    </header>
+
+    <section aria-labelledby="h-view">
+      <h2 id="h-view">View</h2>
+      <div class="row">
+        <button type="button" id="view-orbit" aria-pressed="true">3D</button>
+        <button type="button" id="view-top" aria-pressed="false">Top down</button>
+        <button type="button" id="view-quay" aria-pressed="false">From the river</button>
+      </div>
+      <label for="focus" class="note">Fly to</label>
+      <select id="focus"><option value="all">Whole terminal</option></select>
+    </section>
+
+    <section aria-labelledby="h-inspect">
+      <h2 id="h-inspect">Cell</h2>
+      <div class="inspect" id="inspect" aria-live="polite"><p class="note">Hover over the map to read a cell. Click to pin it.</p></div>
+    </section>
+
+    <section aria-labelledby="h-layers">
+      <h2 id="h-layers">Layers</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="lay-containers" checked> Containers</label>
+        <label><input type="checkbox" id="lay-arrows" checked> Lane arrows</label>
+        <label><input type="checkbox" id="lay-cranes" checked> Cranes</label>
+        <label><input type="checkbox" id="lay-reach"> RTG reach</label>
+        <label><input type="checkbox" id="lay-vehicles" checked> Vehicles</label>
+        <label><input type="checkbox" id="lay-labels" checked> Labels</label>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-fill">
+      <h2 id="h-fill">Yard fill</h2>
+      <div class="slider-head"><label for="fill">Stacks filled</label><output id="fill-out" for="fill">60%</output></div>
+      <input type="range" id="fill" min="0" max="100" step="5" value="60">
+      <p class="note">Example fill to show stacking height, not real inventory. <span id="fill-count"></span></p>
+    </section>
+
+    <section aria-labelledby="h-veh">
+      <h2 id="h-veh">Demo vehicles</h2>
+      <div class="row">
+        <button type="button" id="play" aria-pressed="true">Pause</button>
+        <button type="button" id="speed" aria-pressed="false">Speed 1×</button>
+        <button type="button" id="follow" aria-pressed="false">Follow AGV1</button>
+      </div>
+      <ul class="vehicles" id="vehicle-list"></ul>
+      <p class="note">Routes come from <code>Layout.shortest_path</code>. No dispatch or collision rules: that is the AGV module's job.</p>
+    </section>
+
+    <section aria-labelledby="h-facts">
+      <h2 id="h-facts">On this map</h2>
+      <dl class="facts" id="facts"></dl>
+    </section>
+
+    <section aria-labelledby="h-legend">
+      <h2 id="h-legend">Legend</h2>
+      <ul class="legend" id="legend"></ul>
+    </section>
+  </aside>
+
+  <div class="stage">
+    <canvas id="scene" aria-label="3D model of the Dames Point container terminal"></canvas>
+    <div class="labels" id="labels"></div>
+    <div class="loading" id="loading">Loading the terminal…</div>
+    <div class="hint">Drag to orbit · Right-drag to pan · Scroll to zoom · Click a cell</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<!-- BUNDLE:DATA -->
+<script>
+"use strict";
+// Draws the compiled layout (layouts/dames-point.compiled.json) and nothing else: no terminal rules live here.
+// Grid (x, y): x east, y north. World: X = east, Z = south, Y = up. One world unit is one 15 m cell.
+(async function main() {
+  const loading = document.getElementById("loading");
+  let data;
+  try {
+    data = window.PORT_DATA || {
+      layout: await (await fetch("../layouts/dames-point.compiled.json")).json(),
+      routes: await fetch("demo-routes.json").then(r => (r.ok ? r.json() : { routes: [] })).catch(() => ({ routes: [] })),
+    };
+  } catch (err) {
+    loading.textContent = "Could not load layouts/dames-point.compiled.json. Run `python -m http.server` in the repo root and open /viewer3d/.";
+    return;
+  }
+  if (!window.THREE || !THREE.OrbitControls) {
+    loading.textContent = "Three.js did not load. Check the network connection and reload.";
+    return;
+  }
+  const L = data.layout, ROUTES = (data.routes && data.routes.routes) || [];
+  const W = L.width, H = L.height, M_PER_CELL = L.cell_size_m;
+  const TIER = 2.59 / M_PER_CELL;                      // a container is 2.59 m high
+  const cellAt = (x, y) => L.cells[x + "," + y];
+  const typeAt = (x, y) => (x >= 0 && y >= 0 && x < W && y < H ? L.grid[y][x] : null);
+  const wx = x => x + 0.5 - W / 2, wz = y => -(y + 0.5 - H / 2);
+  const DIR = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };   // grid direction to world (dx, dz)
+
+  // ---------- renderer, camera, controls ----------
+  const canvas = document.getElementById("scene");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 1000);
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.maxPolarAngle = Math.PI * 0.49;
+  controls.minDistance = 6;
+  controls.maxDistance = 220;
+
+  function readSky() {
+    const css = getComputedStyle(document.documentElement).getPropertyValue("--sky").trim() || "#dfe6e8";
+    scene.background = new THREE.Color(css);
+    scene.fog = new THREE.Fog(scene.background, 140, 320);
+  }
+  readSky();
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readSky);
+  new MutationObserver(readSky).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  scene.add(new THREE.HemisphereLight(0xf2f6ff, 0x5a6250, 0.75));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  sun.position.set(-40, 70, 45);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 40, bottom: -40, near: 1, far: 200 });
+  scene.add(sun);
+
+  // ---------- ground tiles: one instanced box per cell, coloured by type ----------
+  const PALETTE = {
+    berth: 0x6f767a, quay: 0xcfc8ae, lane: 0x5d6462, transfer_point: 0xe0782c, yard_slot: 0xc9ccc3,
+    gate_in: 0x3f9e6a, gate_out: 0xc8524a, charging_station: 0x7a5ad1, building: 0x4b4f52,
+    exclusion: 0x8f8a5a, unused: 0xb7bba9,
+  };
+  const kindOf = (t, e) => t === "gate" ? (e.flow === "in" ? "gate_in" : "gate_out")
+    : t === "blocked" ? ((e && e.reason) === "building" ? "building" : (e && e.reason) === "exclusion" ? "exclusion" : "unused") : t;
+  const TILE_TOP = { berth: 0.10, quay: 0.06, lane: 0.02, transfer_point: 0.03, yard_slot: 0.05, gate_in: 0.03, gate_out: 0.03,
+    charging_station: 0.04, building: 0.02, exclusion: -0.02, unused: 0.0 };
+  const tiles = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const t = L.grid[y][x];
+    if (t === "water") continue;
+    tiles.push([x, y, kindOf(t, cellAt(x, y))]);
+  }
+  const tileGeo = new THREE.BoxGeometry(1, 1, 1);
+  const tileMesh = new THREE.InstancedMesh(tileGeo, new THREE.MeshLambertMaterial(), tiles.length);
+  const m4 = new THREE.Matrix4(), col = new THREE.Color(), q = new THREE.Quaternion(), v3 = new THREE.Vector3(), s3 = new THREE.Vector3();
+  tiles.forEach(([x, y, k], i) => {
+    const top = TILE_TOP[k], h = top + 0.3;
+    m4.compose(v3.set(wx(x), top - h / 2, wz(y)), q.identity(), s3.set(1, h, 1));
+    tileMesh.setMatrixAt(i, m4);
+    col.setHex(PALETTE[k]);
+    if (k === "lane" || k === "unused" || k === "exclusion") col.offsetHSL(0, 0, ((x * 7 + y * 13) % 5 - 2) * 0.006);
+    tileMesh.setColorAt(i, col);
+  });
+  tileMesh.receiveShadow = true;
+  scene.add(tileMesh);
+
+  // grid lines on the land so cells read as cells when zoomed in
+  const firstWaterRow = L.grid.findIndex(row => row.every(t => t === "water"));
+  {
+    const pts = [], zTop = H / 2 - firstWaterRow;
+    for (let x = 0; x <= W; x++) pts.push(x - W / 2, 0.075, zTop, x - W / 2, 0.075, H / 2);
+    for (let y = 0; y <= firstWaterRow; y++) pts.push(-W / 2, 0.075, H / 2 - y, W / 2, 0.075, H / 2 - y);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.06 })));
+  }
+
+  // water: one wide plane past the grid, so the river reads as a river
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(W + 260, 120), new THREE.MeshPhongMaterial({ color: 0x3f6f86, shininess: 60, specular: 0x557788 }));
+  water.rotation.x = -Math.PI / 2;
+  water.position.set(0, -0.18, wz(firstWaterRow) + 0.5 - 60);
+  scene.add(water);
+  const landRim = new THREE.Mesh(new THREE.PlaneGeometry(W + 260, 120), new THREE.MeshLambertMaterial({ color: 0xa9ae9b }));
+  landRim.rotation.x = -Math.PI / 2;
+  landRim.position.set(0, -0.31, H / 2 - 4 + 60 - 6);
+  scene.add(landRim);
+  // water cells inside the grid west and east of the berth
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (L.grid[y][x] === "water" && y < firstWaterRow) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1, 0.02, 1), water.material);
+    m.position.set(wx(x), -0.18, wz(y));
+    scene.add(m);
+  }
+
+  // buildings and gate canopies
+  const blockedBuilding = tiles.filter(t => t[2] === "building");
+  if (blockedBuilding.length) {
+    const xs = blockedBuilding.map(t => t[0]), ys = blockedBuilding.map(t => t[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0 + 1, 0.55, y1 - y0 + 1), new THREE.MeshLambertMaterial({ color: 0x5c6266 }));
+    b.position.set((wx(x0) + wx(x1)) / 2, 0.275, (wz(y0) + wz(y1)) / 2);
+    b.castShadow = b.receiveShadow = true;
+    scene.add(b);
+  }
+  const gates = Object.entries(L.cells).filter(([, e]) => e.type === "gate").map(([k, e]) => ({ ...e, pos: k.split(",").map(Number) }));
+  {
+    const xs = gates.map(g => g.pos[0]);
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(Math.max(...xs) - Math.min(...xs) + 1.6, 0.06, 1.3),
+      new THREE.MeshLambertMaterial({ color: 0xeeeeee }));
+    canopy.position.set((wx(Math.min(...xs)) + wx(Math.max(...xs))) / 2, 0.45, wz(0));
+    canopy.castShadow = true;
+    scene.add(canopy);
+    for (const g of gates) {
+      const booth = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.3), new THREE.MeshLambertMaterial({ color: g.flow === "in" ? 0x2e7d52 : 0xa2372f }));
+      booth.position.set(wx(g.pos[0]) - 0.42, 0.22, wz(0));
+      scene.add(booth);
+    }
+  }
+
+  // ---------- lane arrows ----------
+  const arrowShape = new THREE.Shape([new THREE.Vector2(0, 0.17), new THREE.Vector2(0.11, -0.05), new THREE.Vector2(-0.11, -0.05)]);
+  const arrowGeo = new THREE.ShapeGeometry(arrowShape);
+  arrowGeo.rotateX(-Math.PI / 2);               // shape +y becomes world -Z (north)
+  const arrowList = [];
+  for (const [k, e] of Object.entries(L.cells)) for (const d of e.exits || []) arrowList.push([...k.split(",").map(Number), d, e.type]);
+  const arrows = new THREE.InstancedMesh(arrowGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 }), arrowList.length);
+  const ROT = { N: 0, W: Math.PI / 2, S: Math.PI, E: -Math.PI / 2 };
+  arrowList.forEach(([x, y, d, t], i) => {
+    const [dx, dz] = DIR[d], top = TILE_TOP[kindOf(t, cellAt(x, y))] + 0.012;
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), ROT[d]);
+    m4.compose(v3.set(wx(x) + dx * 0.2, top, wz(y) + dz * 0.2), q, s3.set(1, 1, 1));
+    arrows.setMatrixAt(i, m4);
+    arrows.setColorAt(i, col.setHex(t === "transfer_point" || t === "charging_station" ? 0x1c1c1c : 0xffffff));
+  });
+  scene.add(arrows);
+
+  // ---------- yard blocks: footprint from the slot cells ----------
+  const blocks = {};
+  for (const [k, e] of Object.entries(L.cells)) if (e.type === "yard_slot") {
+    const [x, y] = k.split(",").map(Number);
+    const b = blocks[e.block] || (blocks[e.block] = { id: e.block, x0: x, x1: x, y0: y, y1: y, slots: [] });
+    b.x0 = Math.min(b.x0, x); b.x1 = Math.max(b.x1, x); b.y0 = Math.min(b.y0, y); b.y1 = Math.max(b.y1, y);
+    b.slots.push({ x, y, e });
+  }
+  const blockInfo = Object.fromEntries(L.blocks.map(b => [b.id, b]));
+
+  // ---------- containers: one instanced box per possible (slot, tier) ----------
+  const CONTAINER_COLORS = [0xa8432f, 0x2f6f8f, 0x7a8c3a, 0xc59a2c, 0x5b5f66, 0x8a3b5c, 0x2f7f6b, 0xd2d4d0, 0x3b4a8a, 0xb5642a];
+  const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+  const stacks = [];               // { x, y, max, u, slot }
+  for (const b of Object.values(blocks)) for (const s of b.slots) stacks.push({ x: s.x, y: s.y, max: s.e.max_tier, u: hash(s.e.slot), slot: s.e.slot });
+  const totalPositions = stacks.reduce((a, s) => a + s.max, 0);
+  const contGeo = new THREE.BoxGeometry(12.19 / M_PER_CELL, TIER * 0.96, 0.74);   // 40 ft long along the bay axis
+  const containers = new THREE.InstancedMesh(contGeo, new THREE.MeshLambertMaterial(), totalPositions);
+  containers.castShadow = true;
+  containers.receiveShadow = true;
+  const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  let idx = 0;
+  const containerIndex = [];       // [stack, tier] for each instance
+  for (const s of stacks) for (let t = 0; t < s.max; t++) {
+    containerIndex.push([s, t]);
+    containers.setColorAt(idx, col.setHex(CONTAINER_COLORS[Math.floor(hash(s.slot + ":" + t) * CONTAINER_COLORS.length)]));
+    idx++;
+  }
+  scene.add(containers);
+  const heightOf = (s, p) => Math.max(0, Math.min(s.max, Math.floor(p * s.max + s.u)));
+  let fill = 0.6;
+  function applyFill() {
+    let n = 0;
+    containerIndex.forEach(([s, t], i) => {
+      if (t < heightOf(s, fill)) {
+        n++;
+        m4.compose(v3.set(wx(s.x), TILE_TOP.yard_slot + TIER * (t + 0.5), wz(s.y)), q.identity(), s3.set(1, 1, 1));
+        containers.setMatrixAt(i, m4);
+      } else containers.setMatrixAt(i, ZERO);
+    });
+    containers.instanceMatrix.needsUpdate = true;
+    document.getElementById("fill-out").value = Math.round(fill * 100) + "%";
+    document.getElementById("fill-count").textContent =
+      `${n.toLocaleString()} of ${totalPositions.toLocaleString()} container positions (${stacks.length} ground slots × 5 tiers).`;
+  }
+  applyFill();
+
+  // ---------- quay cranes (ship-to-shore) ----------
+  const craneGroup = new THREE.Group();
+  scene.add(craneGroup);
+  const steel = new THREE.MeshLambertMaterial({ color: 0xb8352a });
+  const white = new THREE.MeshLambertMaterial({ color: 0xe9e9e4 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x2b2f33 });
+  const box = (w, h, d, mat, x, y, z) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    return m;
+  };
+  const quayCranes = L.berths.flatMap(b => b.cranes.map(c => ({ ...c, berth: b.id })));
+  const quayY = quayCranes[0].transfer_point[1];
+  for (const c of quayCranes) {
+    const lanes = c.transfer_points.map(p => p[0]);
+    const cx = (wx(Math.min(...lanes)) + wx(Math.max(...lanes))) / 2;
+    const zLand = wz(quayY - 1) + 0.1, zSea = wz(quayY) - 0.35, legH = 2.7;
+    const g = new THREE.Group();
+    for (const dx of [-1.9, 1.9]) for (const z of [zLand, zSea]) g.add(box(0.14, legH, 0.14, steel, cx + dx, legH / 2, z));
+    for (const z of [zLand, zSea]) g.add(box(3.94, 0.18, 0.18, steel, cx, legH, z));       // portal beams
+    for (const dx of [-1.9, 1.9]) g.add(box(0.12, 0.12, zLand - zSea, steel, cx + dx, 0.9, (zLand + zSea) / 2));  // sill beams
+    const boomY = legH + 0.55, zBack = zLand + 1.8, zOut = wz(quayY + 1) - 4.2;
+    for (const dx of [-0.6, 0.6]) g.add(box(0.16, 0.22, zBack - zOut, white, cx + dx, boomY, (zBack + zOut) / 2));
+    g.add(box(1.4, 0.2, 0.2, white, cx, boomY, zOut));
+    for (const dx of [-0.6, 0.6]) g.add(box(0.12, 1.7, 0.12, steel, cx + dx, legH + 0.85, zSea + 0.4));   // apex posts
+    g.add(box(1.32, 0.12, 0.12, steel, cx, legH + 1.7, zSea + 0.4));
+    g.add(box(0.9, 0.5, 0.8, white, cx, boomY - 0.35, zBack - 0.5));                       // machinery house
+    const trolley = box(0.8, 0.22, 0.6, dark, cx, boomY - 0.2, wz(quayY + 1) - 1.4);
+    g.add(trolley);
+    const spreader = box(0.82, 0.06, 0.3, dark, cx, legH - 0.6, wz(quayY + 1) - 1.4);
+    g.add(spreader);
+    const cable = box(0.02, 1, 0.02, dark, cx, 0, wz(quayY + 1) - 1.4);
+    g.add(cable);
+    g.userData = { trolley, spreader, cable, boomY, zSea: wz(quayY + 1) - 1.6, zLand: wz(quayY), phase: hash(c.id) * 10 };
+    craneGroup.add(g);
+  }
+  // a ship alongside each berth
+  const berthCells = Object.entries(L.cells).filter(([, e]) => e.type === "berth").map(([k, e]) => [...k.split(",").map(Number), e.berth]);
+  const berths = {};
+  for (const [x, y, b] of berthCells) {
+    const r = berths[b] || (berths[b] = { id: b, x0: x, x1: x, y });
+    r.x0 = Math.min(r.x0, x); r.x1 = Math.max(r.x1, x);
+  }
+  const shipGroup = new THREE.Group();
+  scene.add(shipGroup);
+  Object.values(berths).forEach((b, i) => {
+    const len = (b.x1 - b.x0 + 1) * 0.78, beam = 3.2, zc = wz(b.y) - 0.5 - beam / 2 - 0.25, xc = (wx(b.x0) + wx(b.x1)) / 2;
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(len, 1.1, beam), new THREE.MeshLambertMaterial({ color: i ? 0x2c3e50 : 0x34312d }));
+    hull.position.set(xc, 0.25, zc); hull.castShadow = true;
+    shipGroup.add(hull);
+    const bridge = box(1.2, 1.6, beam * 0.9, white, xc + len / 2 - 3.5, 1.6, zc);
+    shipGroup.add(bridge);
+    for (let k = 0; k < Math.floor(len / 1.05) - 6; k++) {
+      const h = 1 + Math.floor(hash(b.id + k) * 4);
+      const stack = new THREE.Mesh(new THREE.BoxGeometry(0.95, TIER * h, beam * 0.86),
+        new THREE.MeshLambertMaterial({ color: CONTAINER_COLORS[Math.floor(hash(b.id + "c" + k) * CONTAINER_COLORS.length)] }));
+      stack.position.set(xc - len / 2 + 1 + k * 1.05, 0.8 + TIER * h / 2, zc);
+      stack.castShadow = true;
+      shipGroup.add(stack);
+    }
+  });
+
+  // ---------- yard cranes (RTG): one gantry per crane, parked on its first block ----------
+  const rtgMat = new THREE.MeshLambertMaterial({ color: 0xe0b22c });
+  const rtgs = [];
+  for (const yc of L.yard_cranes) {
+    const b = blocks[yc.blocks[0]];
+    const tp = blockInfo[b.id].transfer_points;
+    const laneY = tp[0][1];
+    const yLow = Math.min(b.y0, laneY), yHigh = Math.max(b.y1, laneY);
+    const g = new THREE.Group();
+    const span = wz(yLow) - wz(yHigh) + 0.9, zc = (wz(yLow) + wz(yHigh)) / 2, hgt = TIER * 6 + 0.25;
+    for (const dx of [-0.42, 0.42]) for (const s of [-1, 1]) g.add(box(0.1, hgt, 0.1, rtgMat, dx, hgt / 2, s * span / 2));
+    for (const s of [-1, 1]) g.add(box(0.95, 0.12, 0.14, rtgMat, 0, hgt, s * span / 2));
+    for (const dx of [-0.42, 0.42]) g.add(box(0.12, 0.16, span + 0.14, rtgMat, dx, hgt, 0));
+    g.add(box(0.7, 0.18, 0.5, dark, 0, hgt - 0.12, 0));
+    for (const dx of [-0.42, 0.42]) for (const s of [-1, 1]) g.add(box(0.16, 0.08, 0.22, dark, dx, 0.12, s * span / 2));
+    g.position.set(wx(Math.round((b.x0 + b.x1) / 2)), 0.05, zc);
+    g.userData = { x0: wx(b.x0) + 0.5, x1: wx(b.x1) - 0.5, phase: hash(yc.id) * 6.28 };
+    scene.add(g);
+    rtgs.push(g);
+  }
+  craneGroup.userData.rtgs = rtgs;
+
+  // RTG reach boxes, dashed on the ground
+  const reachGroup = new THREE.Group();
+  for (const yc of L.yard_cranes) {
+    const [[x0, y0], [x1, y1]] = yc.reach;
+    const a = wx(x0) - 0.5, b2 = wx(x1) + 0.5, z0 = wz(y0) + 0.5, z1 = wz(y1) - 0.5, yh = 0.12;
+    const g = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(a, yh, z0), new THREE.Vector3(b2, yh, z0), new THREE.Vector3(b2, yh, z1), new THREE.Vector3(a, yh, z1), new THREE.Vector3(a, yh, z0)]);
+    const line = new THREE.Line(g, new THREE.LineDashedMaterial({ color: 0x2a3d7a, dashSize: 0.6, gapSize: 0.35 }));
+    line.computeLineDistances();
+    reachGroup.add(line);
+  }
+  reachGroup.visible = false;
+  scene.add(reachGroup);
+
+  // charging posts
+  const stations = L.chargers.map(c => ({ ...c }));
+  for (const st of stations) {
+    const [x, y] = st.cell;
+    scene.add(box(0.16, 0.42, 0.16, new THREE.MeshLambertMaterial({ color: 0x3b2a7a }), wx(x) - 0.32, 0.25, wz(y) + 0.3));
+    const glow = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.12), new THREE.MeshBasicMaterial({ color: 0x9fe870 }));
+    glow.position.set(wx(x) - 0.32, 0.49, wz(y) + 0.3);
+    scene.add(glow);
+  }
+
+  // ---------- vehicles along the demo routes ----------
+  const vehicleGroup = new THREE.Group();
+  scene.add(vehicleGroup);
+  const vehicles = ROUTES.map((r, i) => {
+    const g = new THREE.Group();
+    const truck = r.kind === "truck";
+    g.add(box(truck ? 0.3 : 0.82, 0.14, 0.3, new THREE.MeshLambertMaterial({ color: truck ? 0x2e5aa8 : 0x2f3b3a }), truck ? 0.3 : 0, 0.13, 0));
+    if (truck) {
+      g.add(box(0.28, 0.24, 0.3, new THREE.MeshLambertMaterial({ color: 0x3466c0 }), 0.32, 0.3, 0));
+      g.add(box(0.62, 0.06, 0.24, dark, -0.15, 0.13, 0));
+    } else {
+      g.add(box(0.84, 0.03, 0.32, new THREE.MeshLambertMaterial({ color: 0xe0b22c }), 0, 0.215, 0));
+    }
+    const load = box(0.8, TIER * 0.96, 0.3, new THREE.MeshLambertMaterial({ color: CONTAINER_COLORS[i % CONTAINER_COLORS.length] }), 0, 0.23 + TIER * 0.48, 0);
+    g.add(load);
+    vehicleGroup.add(g);
+    const stopAt = new Map(r.stops.map(s => [s.at, s]));
+    // loaded state when leaving cell i: the latest stop at or before i (wrapping for loops)
+    const loadedAfter = [];
+    let cur = r.stops[r.stops.length - 1].loaded;
+    if (!r.loop) cur = false;
+    for (let k = 0; k < r.path.length; k++) { if (stopAt.has(k)) cur = stopAt.get(k).loaded; loadedAfter.push(cur); }
+    return { r, g, load, stopAt, loadedAfter, t: (i * 17) % r.path.length, dwell: 0, status: "" };
+  });
+  const listEl = document.getElementById("vehicle-list");
+  vehicles.forEach(v => {
+    const li = document.createElement("li");
+    li.innerHTML = `<b>${v.r.id}</b><span>${v.r.label}</span>`;
+    listEl.appendChild(li);
+  });
+  const CELLS_PER_SEC = 3.2, DWELL = 1.6;
+  let speed = 1, playing = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function placeVehicle(v) {
+    const p = v.r.path, n = p.length;
+    const i = Math.floor(v.t) % n, j = v.r.loop ? (i + 1) % n : Math.min(i + 1, n - 1), f = v.t - Math.floor(v.t);
+    const [x0, y0] = p[i], [x1, y1] = p[j];
+    const x = wx(x0 + (x1 - x0) * f), z = wz(y0 + (y1 - y0) * f);
+    const top = TILE_TOP[kindOf(typeAt(x0, y0), cellAt(x0, y0) || {})] || 0.02;
+    v.g.position.set(x, top, z);
+    if (x1 !== x0 || y1 !== y0) v.g.rotation.y = Math.atan2(-(wz(y1) - wz(y0)), wx(x1) - wx(x0));
+    v.load.visible = v.loadedAfter[i];
+  }
+  function stepVehicles(dt) {
+    for (const v of vehicles) {
+      const n = v.r.path.length;
+      if (v.dwell > 0) { v.dwell -= dt; if (v.dwell <= 0) v.t += 0.001; placeVehicle(v); continue; }
+      const before = Math.floor(v.t);
+      v.t += dt * CELLS_PER_SEC;
+      const after = Math.floor(v.t);
+      for (let k = before + 1; k <= after; k++) {
+        const kk = v.r.loop ? k % n : k;
+        if (v.stopAt.has(kk)) { v.t = k; v.dwell = DWELL; v.status = v.stopAt.get(kk).what; break; }
+      }
+      if (v.r.loop) v.t %= n;
+      else if (v.t >= n - 1) { v.t = 0; v.dwell = DWELL; v.status = v.r.stops[0].what; }
+      placeVehicle(v);
+    }
+  }
+  vehicles.forEach(placeVehicle);
+
+  // ---------- labels (HTML, projected each frame) ----------
+  const labelsEl = document.getElementById("labels");
+  const labels = [];
+  const addLabel = (text, cls, pos, layer = "labels") => {
+    const el = document.createElement("div");
+    el.className = "tag " + cls;
+    el.textContent = text;
+    labelsEl.appendChild(el);
+    labels.push({ el, pos, layer });
+  };
+  for (const b of Object.values(blocks)) addLabel(b.id, "block", new THREE.Vector3((wx(b.x0) + wx(b.x1)) / 2, 1.1, (wz(b.y0) + wz(b.y1)) / 2));
+  for (const c of quayCranes) {
+    const lanes = c.transfer_points.map(p => p[0]);
+    addLabel(c.id, "crane", new THREE.Vector3((wx(Math.min(...lanes)) + wx(Math.max(...lanes))) / 2, 4.1, wz(quayY)));
+  }
+  for (const g of rtgs) addLabel(L.yard_cranes[rtgs.indexOf(g)].id, "rtg", g.position.clone().add(new THREE.Vector3(0, TIER * 6 + 0.75, 0)), "rtg");
+  for (const b of Object.values(berths)) addLabel(b.id, "berth", new THREE.Vector3((wx(b.x0) + wx(b.x1)) / 2, 0.2, wz(b.y) - 6.2));
+  {
+    const xs = gates.map(g => g.pos[0]);
+    const nIn = gates.filter(g => g.flow === "in").length;
+    addLabel(`Gate: ${nIn} in, ${gates.length - nIn} out`, "gate", new THREE.Vector3((wx(Math.min(...xs)) + wx(Math.max(...xs))) / 2, 1.1, wz(0) + 1.2));
+  }
+  const depots = [];
+  {
+    const sorted = [...stations].sort((a, b) => a.cell[1] - b.cell[1] || a.cell[0] - b.cell[0]);
+    const groups = [];
+    for (const s of sorted) {
+      const g = groups.find(g => g.y === s.cell[1] && Math.abs(g.x1 - s.cell[0]) <= 1);
+      if (g) { g.x1 = Math.max(g.x1, s.cell[0]); g.x0 = Math.min(g.x0, s.cell[0]); g.ids.push(s.id); }
+      else groups.push({ y: s.cell[1], x0: s.cell[0], x1: s.cell[0], ids: [s.id] });
+    }
+    for (const g of groups) {
+      const ids = g.ids.sort((a, b) => +a.slice(2) - +b.slice(2));
+      g.name = `Chargers ${ids[0]}–${ids[ids.length - 1]}`;
+      depots.push(g);
+      addLabel(g.name, "depot", new THREE.Vector3((wx(g.x0) + wx(g.x1)) / 2, 1.0, wz(g.y)));
+    }
+  }
+  for (const v of vehicles) addLabel(v.r.id, "vehicle", v.g.position, "vehicles");
+  vehicles.forEach((v, i) => { v.label = labels[labels.length - vehicles.length + i]; });
+  const layerOn = { labels: true, rtg: true, vehicles: true };
+  const tmp = new THREE.Vector3();
+  function placeLabels() {
+    const w = labelsEl.clientWidth, h = labelsEl.clientHeight;
+    for (const l of labels) {
+      const on = layerOn.labels && (l.layer === "labels" || layerOn[l.layer]);
+      const p = l.layer === "vehicles" ? tmp.copy(l.pos).setY(l.pos.y + 0.9) : tmp.copy(l.pos);
+      p.project(camera);
+      const show = on && p.z < 1 && p.x > -1.1 && p.x < 1.1 && p.y > -1.1 && p.y < 1.1;
+      l.el.hidden = !show;
+      if (show) l.el.style.transform = `translate(${(p.x * 0.5 + 0.5) * w}px, ${(-p.y * 0.5 + 0.5) * h}px) translate(-50%, -50%)`;
+    }
+  }
+  labels.forEach(l => { l.el.style.left = "0"; l.el.style.top = "0"; });
+
+  // ---------- picking ----------
+  const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.05);
+  const hoverBox = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.08, 1.02), new THREE.MeshBasicMaterial({ color: 0xd4581c, transparent: true, opacity: 0.55 }));
+  const pinBox = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.04, 0.5, 1.04)), new THREE.LineBasicMaterial({ color: 0xd4581c }));
+  hoverBox.visible = pinBox.visible = false;
+  scene.add(hoverBox, pinBox);
+  let pinned = null;
+  function cellUnder(ev) {
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const hit = raycaster.ray.intersectPlane(plane, tmp);
+    if (!hit) return null;
+    const x = Math.floor(hit.x + W / 2), y = Math.floor(H / 2 - hit.z);
+    return x >= 0 && y >= 0 && x < W && y < H ? [x, y] : null;
+  }
+  const NAMES = { berth: "Berth", quay: "Quay lane", lane: "Lane", transfer_point: "Transfer point", yard_slot: "Yard slot",
+    gate_in: "Gate in", gate_out: "Gate out", charging_station: "Charging station", building: "Building",
+    exclusion: "Exclusion zone", unused: "Open ground", water: "Water" };
+  const ARROWS = { N: "north", E: "east", S: "south", W: "west" };
+  function describe([x, y]) {
+    const t = typeAt(x, y), e = cellAt(x, y) || {};
+    const k = t === "water" ? "water" : kindOf(t, e);
+    const rows = [["Cell", `(${x}, ${y})`], ["Position", `${x * M_PER_CELL}–${(x + 1) * M_PER_CELL} m E, ${y * M_PER_CELL}–${(y + 1) * M_PER_CELL} m N`]];
+    if (e.exits && e.exits.length) rows.push(["Exits", e.exits.map(d => ARROWS[d]).join(", ")]);
+    if (t === "yard_slot") {
+      const s = stacks.find(s => s.x === x && s.y === y);
+      rows.push(["Slot", e.slot], ["Block", `${e.block}, bay ${e.bay}, row ${e.row}`], ["Stack", `${heightOf(s, fill)} of ${e.max_tier} tiers (example)`],
+        ["Cargo", e.cargo], ["Yard crane", blockInfo[e.block].crane]);
+    }
+    if (t === "transfer_point") {
+      const sv = e.serves;
+      if (sv.block) rows.push(["Serves", `block ${sv.block}, bay ${sv.bay}`], ["Yard crane", blockInfo[sv.block].crane]);
+      else rows.push(["Serves", `${sv.crane} on berth ${sv.berth}`]);
+      rows.push(["Ground buffer", e.buffer_capacity ? `${e.buffer_capacity} containers` : "none: the crane lifts straight to the vehicle"]);
+    }
+    if (t === "quay" || t === "berth") rows.push(["Berth", e.berth + (e.crane ? `, under ${e.crane}` : "")]);
+    if (t === "charging_station") rows.push(["Station", e.id]);
+    if (t === "gate") rows.push(["Gate", `${e.id}, ${e.flow === "in" ? "trucks enter" : "trucks leave"}`]);
+    if (t === "blocked" && e.reason) rows.push(["Reason", e.reason]);
+    const sw = k === "water" ? "#3f6f86" : "#" + PALETTE[k].toString(16).padStart(6, "0");
+    const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+    return `<div class="kind"><span class="sw" style="background:${sw}"></span>${NAMES[k] || t}</div><dl>` +
+      rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join("") + "</dl>" +
+      (pinned ? `<p class="note" style="margin:8px 0 0">Pinned. Click it again to unpin.</p>` : "");
+  }
+  const inspectEl = document.getElementById("inspect");
+  const placeMarker = (m, [x, y], yOff) => { m.position.set(wx(x), yOff, wz(y)); m.visible = true; };
+  let downAt = null;
+  canvas.addEventListener("pointerdown", ev => { downAt = [ev.clientX, ev.clientY]; });
+  canvas.addEventListener("pointermove", ev => {
+    const c = cellUnder(ev);
+    if (!c) { hoverBox.visible = false; if (!pinned) inspectEl.innerHTML = `<p class="note">Hover over the map to read a cell. Click to pin it.</p>`; return; }
+    placeMarker(hoverBox, c, 0.09);
+    if (!pinned) inspectEl.innerHTML = describe(c);
+  });
+  canvas.addEventListener("pointerleave", () => { hoverBox.visible = false; });
+  canvas.addEventListener("pointerup", ev => {
+    if (!downAt || Math.hypot(ev.clientX - downAt[0], ev.clientY - downAt[1]) > 5) return;
+    const c = cellUnder(ev);
+    if (!c) return;
+    if (pinned && pinned[0] === c[0] && pinned[1] === c[1]) { pinned = null; pinBox.visible = false; }
+    else { pinned = c; placeMarker(pinBox, c, 0.25); }
+    inspectEl.innerHTML = describe(c);
+  });
+
+  // ---------- camera moves ----------
+  const views = {
+    orbit: { pos: [26, 52, 62], target: [4, 0, 2] },
+    top: { pos: [0, 118, 0.01], target: [0, 0, 0] },
+    quay: { pos: [-18, 14, -50], target: [4, 0, -8] },
+  };
+  let flight = null, followed = null;
+  function flyTo(pos, target, ms = 900) {
+    const t1 = new THREE.Vector3(...target), p1 = new THREE.Vector3(...pos);
+    if (camera.aspect < 1.2) p1.sub(t1).multiplyScalar(Math.min(2.2, 1.5 / camera.aspect)).add(t1);   // narrow screens: step back
+    flight = { p0: camera.position.clone(), t0: controls.target.clone(), p1, t1,
+      start: performance.now(), ms: matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : ms };
+  }
+  const viewButtons = { orbit: "view-orbit", top: "view-top", quay: "view-quay" };
+  function setView(name) {
+    followed = null; setFollowButton();
+    for (const [k, id] of Object.entries(viewButtons)) document.getElementById(id).setAttribute("aria-pressed", String(k === name));
+    flyTo(views[name].pos, views[name].target);
+  }
+  for (const [k, id] of Object.entries(viewButtons)) document.getElementById(id).addEventListener("click", () => setView(k));
+  camera.position.set(...views.orbit.pos);
+  controls.target.set(...views.orbit.target);
+
+  // fly-to list
+  const focusEl = document.getElementById("focus");
+  const focusTargets = { all: { pos: views.orbit.pos, target: views.orbit.target } };
+  const addFocus = (group, items) => {
+    const og = document.createElement("optgroup");
+    og.label = group;
+    for (const [id, name, cx, cz, dist] of items) {
+      const o = document.createElement("option");
+      o.value = id; o.textContent = name;
+      og.appendChild(o);
+      focusTargets[id] = { pos: [cx + dist * 0.45, dist * 0.75, cz + dist * 0.9], target: [cx, 0, cz] };
+    }
+    focusEl.appendChild(og);
+  };
+  addFocus("Quay cranes", quayCranes.map(c => [c.id, `${c.id} (berth ${c.berth})`, wx(c.x) + 0.5, wz(quayY), 9]));
+  addFocus("Yard cranes", L.yard_cranes.map(yc => {
+    const [[x0, y0], [x1, y1]] = yc.reach;
+    return [yc.id, `${yc.id}: blocks ${yc.blocks[0]}–${yc.blocks[yc.blocks.length - 1]}`, (wx(x0) + wx(x1)) / 2, (wz(y0) + wz(y1)) / 2, 24];
+  }));
+  addFocus("Charging", depots.map((d, i) => ["depot" + i, d.name, (wx(d.x0) + wx(d.x1)) / 2, wz(d.y), 10]));
+  addFocus("Gates", [["gates", "Gate complex", wx(82), wz(1), 10]]);
+  focusEl.addEventListener("change", () => {
+    const f = focusTargets[focusEl.value];
+    followed = null; setFollowButton();
+    for (const id of Object.values(viewButtons)) document.getElementById(id).setAttribute("aria-pressed", "false");
+    flyTo(f.pos, f.target);
+  });
+
+  // ---------- controls panel ----------
+  const bind = (id, fn) => document.getElementById(id).addEventListener("change", e => fn(e.target.checked));
+  bind("lay-containers", on => { containers.visible = on; });
+  bind("lay-arrows", on => { arrows.visible = on; });
+  bind("lay-cranes", on => { craneGroup.visible = on; rtgs.forEach(g => (g.visible = on)); layerOn.rtg = on; });
+  bind("lay-reach", on => { reachGroup.visible = on; });
+  bind("lay-vehicles", on => { vehicleGroup.visible = on; layerOn.vehicles = on; });
+  bind("lay-labels", on => { layerOn.labels = on; });
+  document.getElementById("fill").addEventListener("input", e => { fill = e.target.value / 100; applyFill(); if (pinned) inspectEl.innerHTML = describe(pinned); });
+  const playBtn = document.getElementById("play");
+  const setPlay = () => { playBtn.textContent = playing ? "Pause" : "Play"; playBtn.setAttribute("aria-pressed", String(playing)); };
+  setPlay();
+  playBtn.addEventListener("click", () => { playing = !playing; setPlay(); });
+  const speedBtn = document.getElementById("speed");
+  speedBtn.addEventListener("click", () => {
+    speed = speed === 1 ? 3 : speed === 3 ? 6 : 1;
+    speedBtn.textContent = `Speed ${speed}×`;
+    speedBtn.setAttribute("aria-pressed", String(speed !== 1));
+  });
+  const followBtn = document.getElementById("follow");
+  function setFollowButton() { followBtn.setAttribute("aria-pressed", String(!!followed)); }
+  followBtn.addEventListener("click", () => {
+    if (followed) { followed = null; setFollowButton(); return; }
+    followed = vehicles[0];
+    setFollowButton();
+    const p = followed.g.position;
+    flyTo([p.x + 6, 7, p.z + 9], [p.x, 0, p.z], 600);
+  });
+  if (!vehicles.length) { document.getElementById("h-veh").parentElement.hidden = true; document.getElementById("lay-vehicles").parentElement.hidden = true; }
+  const panel = document.getElementById("panel"), toggle = document.getElementById("panel-toggle");
+  toggle.addEventListener("click", () => {
+    const c = panel.classList.toggle("collapsed");
+    toggle.textContent = c ? "Show" : "Hide";
+    toggle.setAttribute("aria-expanded", String(!c));
+    resize();
+  });
+
+  // facts and legend, counted from the file
+  const count = t => L.grid.flat().filter(c => c === t).length;
+  const facts = [
+    [quayCranes.length, "Quay cranes"], [Object.keys(berths).length, "Berths"],
+    [L.blocks.length, "Yard blocks"], [L.yard_cranes.length, "Yard cranes (RTG)"],
+    [count("yard_slot").toLocaleString(), "Ground slots"], [count("transfer_point"), "Transfer points"],
+    [stations.length, "Charging stations"], [gates.length, "Gate lanes"],
+  ];
+  document.getElementById("facts").innerHTML = facts.map(([n, t]) => `<div><dt>${t}</dt><dd>${n}</dd></div>`).join("");
+  const legend = [["quay", "Quay lane"], ["lane", "Lane"], ["transfer_point", "Transfer point"], ["yard_slot", "Yard slot"],
+    ["charging_station", "Charging"], ["gate_in", "Gate in"], ["gate_out", "Gate out"], ["exclusion", "Marsh (no build)"]];
+  document.getElementById("legend").innerHTML = legend.map(([k, t]) =>
+    `<li><i style="background:#${PALETTE[k].toString(16).padStart(6, "0")}"></i>${t}</li>`).join("");
+
+  // ---------- resize and loop ----------
+  function resize() {
+    const stage = canvas.parentElement;
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / Math.max(h, 1);
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(canvas.parentElement);
+  resize();
+  if (camera.aspect < 1.2) flyTo(views.orbit.pos, views.orbit.target, 1);
+  loading.hidden = true;
+
+  let last = performance.now(), clock = 0;
+  const ease = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+  function frame(now) {
+    const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));   // rAF time can trail performance.now()
+    last = now;
+    if (playing) {
+      clock += dt * speed;
+      stepVehicles(dt * speed);
+      craneGroup.children.forEach(g => {           // trolleys shuttle between ship and quay
+        const u = g.userData, s = (Math.sin(clock * 0.7 + u.phase) + 1) / 2;
+        const z = u.zSea + (u.zLand - u.zSea) * s;
+        u.trolley.position.z = u.spreader.position.z = u.cable.position.z = z;
+        const lift = 1.2 + Math.abs(Math.cos(clock * 0.7 + u.phase)) * 1.2;
+        u.spreader.position.y = lift;
+        u.cable.scale.y = u.boomY - lift; u.cable.position.y = (u.boomY + lift) / 2;
+      });
+      rtgs.forEach(g => { const u = g.userData; g.position.x = u.x0 + (u.x1 - u.x0) * (Math.sin(clock * 0.12 + u.phase) + 1) / 2; });
+    }
+    if (flight) {
+      const k = Math.min(1, (now - flight.start) / flight.ms), e = ease(k);
+      camera.position.lerpVectors(flight.p0, flight.p1, e);
+      controls.target.lerpVectors(flight.t0, flight.t1, e);
+      if (k >= 1) flight = null;
+    } else if (followed) {
+      const p = followed.g.position, d = p.clone().sub(controls.target);
+      controls.target.add(d); camera.position.add(d);
+    }
+    controls.update();
+    renderer.render(scene, camera);
+    placeLabels();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  window.portViewer = { scene, camera, controls, setView, cellCenter: (x, y) => new THREE.Vector3(wx(x), 0, wz(y)) };
+})();
+</script>
+<!-- BUNDLE:BODY-END -->
+</body>
+</html>

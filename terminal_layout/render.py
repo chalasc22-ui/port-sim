@@ -37,7 +37,7 @@ COLORS = MappingProxyType(
         "blocked_unused": "#fafafa",
     }
 )
-BUFFER_EDGE = "#8a4b00"  # hatch on transfer points that hold more than one container
+BUFFER_EDGE = "#8a4b00"  # hatch on transfer points with a ground buffer (buffer_capacity > 0)
 CRANE_INK = "#26327a"  # yard crane reach outline and tag
 BOLT = ((0.60, 0.90), (0.25, 0.48), (0.47, 0.48), (0.38, 0.10), (0.75, 0.55), (0.53, 0.55))
 LEGEND = (
@@ -45,7 +45,7 @@ LEGEND = (
     ("berth", "berth"),
     ("quay", "quay"),
     ("lane", "lane"),
-    ("transfer_point", "transfer point"),
+    ("transfer_point", "transfer point (vehicle stands here under the crane)"),
     ("yard_slot", "yard slot"),
     ("gate_in", "gate in"),
     ("gate_out", "gate out"),
@@ -159,10 +159,14 @@ def _draw_labels(ax: Any, cells: dict[str, Any], font: float) -> None:
 
 
 def _draw_buffers(ax: Any, cells: dict[str, Any]) -> None:
-    """Hatch the transfer points that hold more than one container (a transfer buffer)."""
+    """Hatch the transfer points where containers may be set on the ground (a buffer).
+
+    A plain transfer point is a coupled handover: the crane lifts straight between the
+    vehicle standing there and the stack or ship, so nothing is drawn.
+    """
     rects = []
     for key, entry in cells.items():
-        if entry["type"] == "transfer_point" and entry.get("buffer_capacity", 1) > 1:
+        if entry["type"] == "transfer_point" and entry.get("buffer_capacity", 0) > 0:
             x, y = _split(key)
             rects.append(Rectangle((x, y), 1, 1))
     if rects:
@@ -201,17 +205,17 @@ def _legend(ax: Any, compiled: dict[str, Any]) -> None:
         for y in range(compiled["height"])
         for x in range(compiled["width"])
     }
-    capacities = [e.get("buffer_capacity", 1) for e in cells.values() if e["type"] == "transfer_point"]
+    capacities = [e.get("buffer_capacity", 0) for e in cells.values() if e["type"] == "transfer_point"]
     handles = []
     for key, label in LEGEND:
         if key not in present:
             continue
         if key == "transfer_point":
-            if any(c <= 1 for c in capacities):
+            if any(c == 0 for c in capacities):
                 handles.append(Patch(facecolor=COLORS[key], edgecolor="#888888", label=label))
-            if any(c > 1 for c in capacities):
+            if any(c > 0 for c in capacities):
                 handles.append(Patch(facecolor=COLORS[key], edgecolor=BUFFER_EDGE, hatch="////",
-                                     label="transfer buffer"))
+                                     label="transfer point with ground buffer"))
         else:
             handles.append(Patch(facecolor=COLORS[key], edgecolor="#888888", label=label))
     if compiled.get("yard_cranes"):
