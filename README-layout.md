@@ -13,7 +13,7 @@ Python 3.11+. Depends on `pydantic`, `networkx` and `matplotlib` (plus `pytest` 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-pytest                             # 223 tests, a few seconds
+pytest                             # 227 tests, a few seconds
 python examples/demo.py            # prints a tour and writes layout.png
 ```
 
@@ -117,7 +117,7 @@ imagery and written down as numbers in `tools/build_dames_point.py`.
 | Yard | 27 blocks, 419 bays, 786 ground slots of 3 container rows each, max tier 5 (11,790 containers): the south-east yard `A1` to `G3`, strip blocks `H1` to `H4` along the apron, the north-west yard `N1` to `N4` |
 | Yard cranes | `RTG1` to `RTG3` take the three block columns of rows A to E, `RTG4` rows F and G, `RTG5` the strips, `RTG6` the north-west yard. Each has a reach rectangle (`layout.yard_cranes`), drawn as a dashed box |
 | Charging | two depots of six stations, each with a passing lane, at sites chosen by a p-median solve: `CH1` to `CH6` at (3, 29) to (8, 29) beside the west column, `CH7` to `CH12` at (88, 30) to (93, 30) beside the inbound road |
-| Transfer buffers | none: `buffer_capacity` is 0 everywhere, a coupled handover (an RTG lifts straight to the vehicle in its truck lane, a quay crane to the vehicle waiting under it) |
+| Transfer buffers | 2 containers at every transfer point (`buffer_capacity`), as in PortSim, the course's reference simulator; 0 is available for a coupled handover |
 | Gates | in: `G_IN1` (80, 0), `G_IN2` (81, 0). out: `G_OUT1` (84, 0), `G_OUT2` (85, 0) |
 | Not roads | the marsh and ponds in the middle (`blocked`, reason `exclusion`) and the gate buildings (reason `building`) |
 
@@ -162,6 +162,18 @@ them in the same change.
 ```bash
 python tools/build_dames_point.py
 ```
+
+## Road graph and road variants
+
+`python tools/export_graph.py` writes `layouts/dames-point.graph.json`: the map as a directed road graph,
+the way PortSim describes a terminal. Nodes are stopping points (junctions, transfer points, chargers,
+gates) with positions in metres; segments are the roads between them with `length_m` and the cells they
+cross (750 stopping points, 1,028 segments, 20.3 km of road). The format is ours until we have PortSim's.
+
+`python tools/build_road_variants.py` writes two variants to `layouts/variants/`, with every station kept:
+`dames-point-two-way` (all roads two-way: median trip 52 moves, longest 119) and `dames-point-one-aisle`
+(the x = 36 aisle removed: median 88, longest 245; the base map is 84 and 211). Closed roads need no
+file: use `with_closures()`.
 
 ## Integration smoke test
 
@@ -253,7 +265,7 @@ terminal_layout/
 layouts/        demo-12x8.json, dames-point.json, their compiled forms, dames-point-trace.png
 tools/          build_dames_point.py (writes the Dames Point files), charger_siting.py (p-median depot siting),
                 build_viewer_routes.py and bundle_viewer.py (the 3D viewer)
-tests/          223 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2
+tests/          227 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2
 examples/       demo.py; agv_stub.py, one vehicle driving full jobs with neighbors() alone
 docs/           layout-spec.md (the spec this was built from), demo-12x8.png, dames-point.png
 ```

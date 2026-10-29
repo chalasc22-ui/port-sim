@@ -81,7 +81,7 @@ def test_each_quay_crane_has_four_transfer_lanes_beside_the_berth(dames):
     """A typical back reach has four transfer lanes; the vehicle waits in one and the crane lifts to it."""
     for crane in dames.quay_cranes.values():
         assert crane.transfer_points == tuple((crane.x + d, 34) for d in (-1, 0, 1, 2)), crane.id
-        assert crane.buffer_capacity == 0
+        assert crane.buffer_capacity == 2
         assert all(dames.cell(x, 35).attrs["berth"] == crane.berth for x, _ in crane.transfer_points)
     assert len(dames.transfer_points(berth_id="B1")) == 12 and len(dames.transfer_points(berth_id="B2")) == 12
 
@@ -281,12 +281,12 @@ def test_the_passing_lane_gets_a_vehicle_past_a_queue(dames):
     assert dames.exits(2, 28) == ["E", "S"] and dames.exits(5, 27) == ["N", "E"]
 
 
-def test_handovers_are_coupled_so_nothing_waits_on_the_ground(dames):
-    """An RTG lifts straight between the stack and the vehicle in its truck lane, and a quay crane with plain
-    AGVs does the same, so buffer_capacity is 0 at every transfer point."""
-    assert {c.attrs["buffer_capacity"] for c in dames.cells("transfer_point")} == {0}
-    assert {b.buffer_capacity for b in dames.blocks.values()} == {0}
-    assert {c.buffer_capacity for c in dames.quay_cranes.values()} == {0}
+def test_every_transfer_point_has_a_finite_buffer_of_two(dames):
+    """PortSim (the course's reference simulator) models a finite transfer buffer of 2 containers; a full
+    buffer makes the next vehicle wait. 0 stays available for a coupled handover."""
+    assert {c.attrs["buffer_capacity"] for c in dames.cells("transfer_point")} == {2}
+    assert {b.buffer_capacity for b in dames.blocks.values()} == {2}
+    assert {c.buffer_capacity for c in dames.quay_cranes.values()} == {2}
 
 
 def test_each_yard_crane_has_its_blocks_and_its_reach(dames):
@@ -358,11 +358,11 @@ def test_render_draws_the_stations_the_buffers_and_each_crane_reach(dames):
     assert {f"RTG{n}" for n in range(1, 7)} <= {t.get_text() for t in ax.texts}
     assert len([p for p in ax.patches if isinstance(p, Polygon)]) == 12  # one bolt per station
     assert len([p for p in ax.patches if isinstance(p, Rectangle)]) == 6  # one reach box per yard crane
-    assert [c for c in ax.collections if c.get_hatch() == "////"] == []  # no ground buffers anywhere
+    hatched = [c for c in ax.collections if c.get_hatch() == "////"]
+    assert len(hatched) == 1 and len(hatched[0].get_paths()) == 443  # every transfer point has a buffer of 2
     _legend(ax, compiled)
     legend = {t.get_text() for t in ax.get_legend().get_texts()}
-    assert legend >= {"charging station", "transfer point (vehicle stands here under the crane)", "yard crane reach"}
-    assert "transfer point with ground buffer" not in legend
+    assert legend >= {"charging station", "transfer point with ground buffer", "yard crane reach"}
 
 
 def test_render_shows_the_marsh_in_its_own_colour(dames):

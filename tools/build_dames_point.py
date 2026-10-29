@@ -71,7 +71,8 @@ Circulation (everything is one way; the arrows in render_2d show it):
   (fork at (1, 28)) and CH7 to CH12 off the inbound road (fork at (86, 29)), both on roads that
   lead back to the quay; tools/charger_siting.py chose the sites (DEPOTS). A depot is a
   detour off the road, so it shortens no trip.
-* Transfer buffers. buffer_capacity is 0 everywhere: an RTG lane and a quay crane with plain
+* Transfer buffers. buffer_capacity is 2 everywhere, matching PortSim's finite buffer (0 would be a coupled
+  handover). Was 0 on Oct 22: an RTG lane and a quay crane with plain
   AGVs are coupled handovers, nothing waits on the ground. The field stays so a Lift-AGV
   rack terminal can be described (set it per block or crane).
 """
@@ -114,8 +115,8 @@ NW_X, NW_BAYS = 99, 12
 MARSH = [[59, 12], [84, 26]]           # marsh and ponds: nothing can be built or driven here
 GATE_BUILDING = [[78, 7], [82, 10]]
 CONTAINER_ROWS = 3     # container rows per cell row: a two-row block is 30 m = 6 containers wide, a 6+1 RTG span
-YARD_BUFFER = 0        # containers set on the ground at a yard transfer point: none, an RTG lifts to the vehicle
-QUAY_BUFFER = 0        # same under the quay cranes
+YARD_BUFFER = 2        # containers that can wait on the ground at a yard transfer point (PortSim uses 2; 3 at its Jacksonville layout)
+QUAY_BUFFER = 2        # same under each quay crane, per transfer lane
 CHARGERS = 6           # charging stations per depot, side by side
 # Charging depots, each ("north", column x, bottom row y, side) beside a northbound road, or
 # ("south", column x, top row y, side) beside a southbound one, or ("lane", lane_y, fork_x,
