@@ -318,6 +318,7 @@ def compile_core(model: LayoutFile) -> tuple[Core, list[str]]:
             slots=tuple(slots[b.id]),
             transfer_points=tuple(sorted(block_points[b.id])),
             buffer_capacity=b.buffer_capacity,
+            container_rows=b.container_rows,
         )
         for b in sorted(model.blocks, key=lambda b: b.id)
     }

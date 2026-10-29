@@ -100,6 +100,10 @@ class BlockEntry(_Entry):
     cargo: Cargo = "general"
     service_side: Direction
     crane: Ident | None = None
+    # Container rows side by side in one cell row of the block (a 15 m cell is about six container
+    # widths of floor, so 3 leaves room for the RTG's legs and clearances). Capacity only; slot ids
+    # still name the cell. Schema 1.2, default 1.
+    container_rows: PosInt = 1
     # Containers that may be set on the ground at each of the block's transfer points. 0 is a
     # coupled handover: the yard crane lifts straight between the stack and a waiting vehicle.
     buffer_capacity: NonNegInt = 0

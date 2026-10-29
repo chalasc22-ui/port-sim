@@ -44,3 +44,13 @@ def test_the_viewer_reads_only_the_compiled_file_and_the_routes():
     page = (ROOT / "viewer3d" / "index.html").read_text()
     assert "../layouts/dames-point.compiled.json" in page and "demo-routes.json" in page
     assert "dames-point.json\"" not in page  # never the authored file
+
+
+def test_the_agv_stub_completes_both_jobs_using_only_the_api(dames):
+    """The integration smoke test from the timeline: a job driven with neighbors() alone."""
+    spec = importlib.util.spec_from_file_location("agv_stub", ROOT / "examples" / "agv_stub.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    for legs in module.jobs(dames).values():
+        moves, seconds, _ = module.drive(dames, legs)
+        assert moves > 0 and seconds > 0

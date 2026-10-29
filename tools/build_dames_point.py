@@ -67,10 +67,10 @@ Circulation (everything is one way; the arrows in render_2d show it):
   passing lane drives past one waiting in the access lane and drops into it further along),
   a row of six charging stations below the access lane, and an exit lane that rejoins the
   road. A vehicle can charge in any station and the loop still carries the others past, so
-  charging never blocks the road (rule 15 checks this). The east depot (CH1 to CH6) hangs off
-  the east column at (57, 8); the second depot's position is DEPOT2 (see the analysis in
-  docs/layout-spec.md). A depot is 6 moves or more against 2 on the road, so it shortens
-  no trip.
+  charging never blocks the road (rule 15 checks this). CH1 to CH6 hang off the west column
+  (fork at (1, 28)) and CH7 to CH12 off the inbound road (fork at (86, 29)), both on roads that
+  lead back to the quay; tools/charger_siting.py chose the sites (DEPOTS). A depot is a
+  detour off the road, so it shortens no trip.
 * Transfer buffers. buffer_capacity is 0 everywhere: an RTG lane and a quay crane with plain
   AGVs are coupled handovers, nothing waits on the ground. The field stays so a Lift-AGV
   rack terminal can be described (set it per block or crane).
@@ -113,17 +113,17 @@ NW_ROWS = [30, 27, 24, 21]       # north-west yard block rows (origin y, 2 rows 
 NW_X, NW_BAYS = 99, 12
 MARSH = [[59, 12], [84, 26]]           # marsh and ponds: nothing can be built or driven here
 GATE_BUILDING = [[78, 7], [82, 10]]
+CONTAINER_ROWS = 3     # container rows per cell row: a two-row block is 30 m = 6 containers wide, a 6+1 RTG span
 YARD_BUFFER = 0        # containers set on the ground at a yard transfer point: none, an RTG lifts to the vehicle
 QUAY_BUFFER = 0        # same under the quay cranes
 CHARGERS = 6           # charging stations per depot, side by side
-CHARGE_FORK_Y = 8      # east depot: the east column forks east here (access lane) and one row up (passing lane)
-CHARGE_X0 = 59         # east depot: x of the first charging station
-# Second depot: ("column", x, top_y, flow) hangs off a north-south road like the east depot;
-# ("lane", lane_y, fork_x, road_x, climb) hangs below a west-flowing lane and drains into the
-# northbound road at road_x. None builds the east depot only. The site below the return lane
-# won the comparison in docs/layout-spec.md (bottom-left, which the group suggested, saves 3
-# percent of the charging detour; this site saves 21 percent).
-DEPOT2 = ("lane", RET_Y, OUT_X - 1, IN_X, False)
+# Charging depots, each ("north", column x, bottom row y, side) beside a northbound road, or
+# ("south", column x, top row y, side) beside a southbound one, or ("lane", lane_y, fork_x,
+# road_x, climb) below a westbound lane. Placed by tools/charger_siting.py: an exact p-median
+# solve over every road cell with room for a depot puts the best two beside the two northbound roads
+# that lead back to the quay: the west column, and the inbound road (x = 86). Vehicles take those
+# roads to the quay anyway, so a charge costs little detour (see docs/layout-spec.md).
+DEPOTS = [("north", WEST_X, 27, "E"), ("north", IN_X, 28, "E")]
 
 
 def build() -> dict:
@@ -137,7 +137,7 @@ def build() -> dict:
     def block(bid, x, y, bays, rows, rtg):
         blocks.append({"id": bid, "origin": [x, y], "bays": bays, "rows": rows, "orientation": "EW",
                        "max_tier": 5, "cargo": "general", "service_side": "S", "crane": f"RTG{rtg}",
-                       "buffer_capacity": YARD_BUFFER})
+                       "buffer_capacity": YARD_BUFFER, "container_rows": CONTAINER_ROWS})
 
     def stations(cells):
         first = len(chargers)
@@ -171,6 +171,29 @@ def build() -> dict:
         lane(min(near, loop_x), exit_y, max(near, loop_x), exit_y, [back])
         stations([(x, bay_y) for x in (range(lo, hi + 1) if flow == "E" else range(hi, lo - 1, -1))])
         return exit_y
+
+    def depot_beside_north_column(col_x, bottom_y, flow):
+        """A depot east (flow "E") or west ("W") of a column that flows north: the mirror of
+        depot_beside_column. Rows from the bottom: passing lane, access lane, stations, exit lane.
+        """
+        passing_y, access_y, bay_y, exit_y = bottom_y, bottom_y + 1, bottom_y + 2, bottom_y + 3
+        sign = 1 if flow == "E" else -1
+        back = "W" if flow == "E" else "E"
+        x_first, x_last = col_x + sign * 2, col_x + sign * (CHARGERS + 1)
+        loop_x = col_x + sign * (CHARGERS + 2)
+        lo, hi = min(x_first, x_last), max(x_first, x_last)
+        near = col_x + sign
+        lane(col_x, access_y, col_x, access_y, ["N", flow])   # the fork cell
+        lane(near, access_y, near, access_y, [flow, "S"])     # into the access lane, or down to the passing lane
+        lane(near, passing_y, near, passing_y, [flow])
+        lane(lo, passing_y, hi, passing_y, [flow, "N"])       # pass a waiting vehicle, climb in further along
+        lane(loop_x, passing_y, loop_x, passing_y, ["N"])
+        lane(lo, access_y, hi, access_y, [flow, "N"])         # on along the lane, or up into a station
+        lane(loop_x, access_y, loop_x, access_y, ["N"])
+        lane(lo, bay_y, hi, bay_y, ["N"])                     # the stations
+        lane(loop_x, bay_y, loop_x, bay_y, ["N"])
+        lane(min(near, loop_x), exit_y, max(near, loop_x), exit_y, [back])
+        stations([(x, bay_y) for x in (range(lo, hi + 1) if flow == "E" else range(hi, lo - 1, -1))])
 
     def depot_below_lane(lane_y, fork_x, aisle_x, climb=True):
         """A depot south of a lane that flows west, draining into a northbound road at aisle_x.
@@ -225,8 +248,14 @@ def build() -> dict:
             block(bid, x0, y0, bays, 2, j + 1 if has_col1 else 4)
         service_ys.append(y0 - 1)
     lane_forks: dict[int, set[int]] = {}           # westbound lane row -> cells that also drop south (a depot fork)
-    if DEPOT2 is not None and DEPOT2[0] == "lane":
-        lane_forks.setdefault(DEPOT2[1], set()).add(DEPOT2[2])
+    column_forks: set[tuple[int, int]] = set()     # column cells a depot sets itself (its fork)
+    for kind, *spec in DEPOTS:
+        if kind == "lane":
+            lane_forks.setdefault(spec[0], set()).add(spec[1])
+        elif kind == "north":
+            column_forks.add((spec[0], spec[1] + 1))
+        else:
+            column_forks.add((spec[0], spec[1] - 1))
 
     def west_lane(x0, x1, y):
         """A lane from x0 to x1 flowing west, split around any depot fork on it."""
@@ -255,26 +284,22 @@ def build() -> dict:
     strip_lane_ys = [y - 1 for y in STRIP_ROWS]
     for aisle in AISLES:                           # aisles flow north, collecting from the lanes they cross
         for y in range(service_ys[-1] + 1, QUAY_Y):
-            if y in service_ys:
+            if y in service_ys or (aisle, y) in column_forks:
                 continue
             lane(aisle, y, aisle, y, ["N", "E"] if y in (RET_Y, BYPASS_Y) else ["N"])
-    taken = {RET_Y, BYPASS_Y, CHARGE_FORK_Y, *service_ys, *strip_lane_ys}   # east column cells set elsewhere
+    taken = {RET_Y, BYPASS_Y, *service_ys, *strip_lane_ys}   # east column cells set elsewhere
     for y in range(service_ys[-1] + 1, QUAY_Y):
-        if y not in taken:
+        if y not in taken and (EAST_X, y) not in column_forks:
             lane(EAST_X, y, EAST_X, y, ["S"])
     lane(EAST_X, RET_Y, EAST_X, RET_Y, ["S"])      # the outbound road ends here and turns south
     west_top = min(ys for ys, y0 in zip(service_ys, SE_ROWS) if y0 >= NO_COL1_BELOW)
     for y in range(west_top, QUAY_Y):              # west column: north from the lowest lane that reaches it
-        lane(WEST_X, y, WEST_X, y, ["N", "E"] if y in (RET_Y, BYPASS_Y) else ["N"])
+        if (WEST_X, y) not in column_forks:
+            lane(WEST_X, y, WEST_X, y, ["N", "E"] if y in (RET_Y, BYPASS_Y) else ["N"])
 
     # ---- charging depots -----------------------------------------------------------------
-    depot_beside_column(EAST_X, CHARGE_FORK_Y + 1, "E")       # CH1 to CH6, exit lane = the lowest service lane
-    if DEPOT2 is not None:
-        kind, *spec = DEPOT2
-        if kind == "column":
-            depot_beside_column(*spec)
-        else:
-            depot_below_lane(*spec)
+    for kind, *spec in DEPOTS:                                # CH1 to CH6, then CH7 to CH12
+        {"north": depot_beside_north_column, "south": depot_beside_column, "lane": depot_below_lane}[kind](*spec)
 
     # ---- south road: foot of the east column east to the gate-out column ----------------
     lane(EAST_X, SOUTH_Y, IN_LOW_X - 1, SOUTH_Y, ["E"])     # the gate-in column crosses it at IN_LOW_X
@@ -291,7 +316,8 @@ def build() -> dict:
 
     # ---- inbound road: north from the gate to the return lane and the bypass lane ---------
     for y in range(IN_LOW_Y, BYPASS_Y):
-        lane(IN_X, y, IN_X, y, ["N", "W"] if y == RET_Y else ["N"])
+        if (IN_X, y) not in column_forks:
+            lane(IN_X, y, IN_X, y, ["N", "W"] if y == RET_Y else ["N"])
     for y in range(1, IN_LOW_Y):                       # gate-in column, then east along row IN_LOW_Y
         lane(IN_LOW_X, y, IN_LOW_X, y, ["N", "E"] if y == SOUTH_Y else ["N"])
     lane(IN_LOW_X, IN_LOW_Y, IN_X - 1, IN_LOW_Y, ["E"])
@@ -314,11 +340,8 @@ def build() -> dict:
     lane(NW_FEED_X, nw_service[-1], NW_FEED_X, nw_service[-1], ["W"])
     for ys in nw_service:
         lane(OUT_X + 1, ys, NW_FEED_X - 1, ys, ["W"])
-    exit_road_taken = set()
-    if DEPOT2 is not None and DEPOT2[0] == "column" and DEPOT2[1] == OUT_X:
-        exit_road_taken = {DEPOT2[2] - 1}               # the fork cell on the access row is set by the depot
     for y in range(2, RET_Y):                           # exit road: from the quay fork down to row 1
-        if y not in exit_road_taken:
+        if (OUT_X, y) not in column_forks:
             lane(OUT_X, y, OUT_X, y, ["S"])
 
     # ---- outbound road: east along RET_Y from the west column to the east column

@@ -183,6 +183,8 @@ Authored file for that map:
 | --- | --- |
 | Authored `berths[].cranes[]` | optional `transfer_lanes`, a whole number of at least 1 (default 1): transfer points side by side along the quay, centred on `x` |
 | Authored `blocks[]` and `berths[].cranes[]` | `buffer_capacity` may be 0 and defaults to 0 |
+| Authored `blocks[]` | optional `container_rows`, a whole number of at least 1 (default 1): container rows side by side in one cell row, for capacity |
+| Compiled `blocks[]`, Python `Block` | `container_rows` and `capacity` (ground slots × container rows × `max_tier`) |
 | Compiled `berths[].cranes[]` | `x` and `transfer_points` (every lane, by x); `transfer_point` stays and is the one in the crane's own column |
 | Python API | `layout.quay_cranes` (id, berth, x, transfer_points, buffer_capacity) |
 | Compiled `schema_version` | `"1.2"` |
@@ -218,7 +220,7 @@ layout.transfer_points(block_id=None, berth_id=None) -> list[Cell]
 layout.transfer_point_for(slot_id: str) -> Cell     # the one at that slot's bay
 
 # Yard
-layout.blocks -> dict[str, Block]     # Block: id, bays, rows, max_tier, cargo, crane, slots, transfer_points, buffer_capacity
+layout.blocks -> dict[str, Block]     # Block: id, bays, rows, max_tier, cargo, crane, slots, transfer_points, buffer_capacity, container_rows, capacity
 layout.berths -> dict[str, tuple[tuple[str, tuple[int, int]], ...]]   # berth id -> ((crane id, transfer point in the crane's own column), ...)
 layout.quay_cranes -> dict[str, QuayCrane]   # QuayCrane: id, berth, x, transfer_points (one per lane, by x), buffer_capacity
 layout.yard_cranes -> dict[str, YardCrane]   # YardCrane: id, blocks (ids), reach ((x0, y0), (x1, y1)); derived from the blocks
@@ -275,7 +277,7 @@ File names: `layouts/demo-12x8.json` and `layouts/dames-point.json`. A traced sc
 
 **As built (v0.2)**
 
-`layouts/dames-point.json` is written by `tools/build_dames_point.py`, which checks the layout with `load_layout` (writing nothing if a rule fails), then writes the compiled file and `docs/dames-point.png`. Edit the script, not the JSON; a test fails if the files differ from what the script writes. The grid is 112 × 43 cells; the quay is 100 cells (1,500 m of the real 1,525 m) in two berths, `B1` (x = 6 to 55, `QC1` to `QC3` at x = 14, 31, 48) and `B2` (x = 56 to 105, `QC4` to `QC6` at x = 65, 82, 99), each crane with four transfer lanes (x - 1 to x + 2); there are 27 blocks with 419 bays and 786 ground slots; the gates are `G_IN1`, `G_IN2`, `G_OUT1` and `G_OUT2` on row 0. Where it differs from the plan above:
+`layouts/dames-point.json` is written by `tools/build_dames_point.py`, which checks the layout with `load_layout` (writing nothing if a rule fails), then writes the compiled file and `docs/dames-point.png`. Edit the script, not the JSON; a test fails if the files differ from what the script writes. The grid is 112 × 43 cells; the quay is 100 cells (1,500 m of the real 1,525 m) in two berths, `B1` (x = 6 to 55, `QC1` to `QC3` at x = 14, 31, 48) and `B2` (x = 56 to 105, `QC4` to `QC6` at x = 65, 82, 99), each crane with four transfer lanes (x - 1 to x + 2); there are 27 blocks with 419 bays and 786 ground slots, each cell row standing for 3 container rows (`container_rows`), so the yard holds 11,790 containers at 5 tiers; the gates are `G_IN1`, `G_IN2`, `G_OUT1` and `G_OUT2` on row 0. Where it differs from the plan above:
 
 | Plan | Built | Why |
 | --- | --- | --- |
@@ -287,19 +289,21 @@ File names: `layouts/demo-12x8.json` and `layouts/dames-point.json`. A traced sc
 
 The longest leg between a gate, a block and a crane is 211 moves (3.2 km) because every road is one way; a test fails above 250. Over the 6,704 trips between gates, cranes and bays the v0.2 roads measure 15 / 84 / 211 moves (min / median / max), mean 87.6; v0.1 measured 15 / 86 / 228, mean 90.1, so the bypass and the return lane shortened trips as well as unblocking the quay. QC1 to the first bay of A1 is 108 in both.
 
-**Charging depots (schema 1.1, passing lane and second depot in v0.2).** A depot is a loop of four rows beside a road: a passing lane and an access lane side by side, six stations below the access lane, and an exit lane back to the road. A vehicle in the passing lane drives past one waiting in the access lane and drops into it further along, so a queue in front of the first station does not block the others; the two lanes hold 13 queued vehicles beyond the entrance cell (7 in v0.1, with no way past). The east depot hangs off the east column: fork at (57, 8), access lane y = 8, passing lane y = 9, `CH1` to `CH6` at (59, 7) to (64, 7), exit lane y = 6 back to (57, 6). The second depot hangs below the return lane: fork at (95, 32), passing lane y = 31, access lane y = 30, `CH7` to `CH12` at (93, 29) to (88, 29), exit lane y = 28 west into the inbound road at (86, 28). Each depot is a detour (6 moves against 2 on the road; 17 against 9), so it shortens no trip, and with all twelve stations occupied the network still connects (rule 15). Every transfer point has `buffer_capacity` 0 (coupled handover, see the grid model), and each of the six yard cranes carries its reach box. Twelve stations in two depots is a placeholder until the AGV owner says what the fleet needs; the constants are `CHARGERS` and `DEPOT2` in `tools/build_dames_point.py`.
+**Charging depots (placed by optimization in v0.2).** A depot is a loop of four rows beside a road: a passing lane and an access lane side by side, six stations next to the access lane, and an exit lane back to the road. A vehicle in the passing lane drives past one waiting in the access lane and turns in further along, so a queue in front of the first station does not block the others; the two lanes hold 15 queued vehicles beyond the entrance cell (7 in v0.1, with no way past). Both depots hang off northbound roads that lead back to the quay. The west-column depot forks at (1, 28): passing lane y = 27, access lane y = 28, `CH1` to `CH6` at (3, 29) to (8, 29), exit lane y = 30 back into the column. The inbound-road depot forks at (86, 29): passing lane y = 28, access lane y = 29, `CH7` to `CH12` at (88, 30) to (93, 30), exit lane y = 31 back into the road. Each is a detour (6 moves against 2 on the road), so it shortens no trip, and with all twelve stations occupied the network still connects (rule 15). Twelve stations in two depots is a placeholder until the AGV owner says what the fleet needs; the constants are `CHARGERS` and `DEPOTS` in `tools/build_dames_point.py`.
 
-*Where the second depot went, and why not bottom-left.* The Oct 22 class suggested keeping the east depot and adding one bottom-left, so each half of the yard charges on its own side; the professor called it a resource allocation problem (the textbook name is facility location). Four sites were compared on the full charging detour: from every transfer point (where a vehicle turns up empty) to the nearest station and on to the nearest quay transfer point, taking the best station each time (`scratchpad/depots/site_analysis.py`, recomputed independently from the compiled JSON).
+*Where the depots go: a p-median solve.* The Oct 22 class asked where to put charging stations, and the professor called it a resource allocation problem; in operations research it is the p-median problem. `tools/charger_siting.py` solves it exactly (an integer program, scipy `milp` with HiGHS). Demand points are the 443 transfer points, where a vehicle finishes a job. Candidates are the 203 road cells with a 9 × 4 block of open ground beside them, room for a depot like the built ones. The cost of charging at site j after a job at i is the moves from i to j plus the moves from j to the nearest quay transfer point, where the next job usually starts. Results, also in `docs/charger-siting.csv`:
 
-| Second depot | Mean detour (moves) | Median | Worst | Saved |
+| Charging layout | Depots | Mean detour (moves) | Median | Worst |
 | --- | --- | --- | --- | --- |
-| none (east depot only) | 153.9 | 149 | 214 | |
-| bottom-left, below row G's lane (x = 19 to 27) | 148.8 | 147 | 214 | 3 % |
-| bottom centre, below row G's lane (x = 37 to 45) | 151.8 | 149 | 214 | 1 % |
-| off the exit road (x = 88 to 95, y = 17 to 20) | 142.0 | 143 | 182 | 8 % |
-| below the return lane (x = 87 to 95, y = 28 to 31), built | 122.0 | 129 | 165 | 21 % |
+| v0.1: east depot by the south road | 1 | 153.9 | 149 | 214 |
+| Oct 22: east depot plus one below the return lane, best of four hand-picked sites | 2 | 122.0 | 129 | 165 |
+| Optimum, 1 depot | 1 | 86.3 | 70 | 210 |
+| Optimum, 2 depots | 2 | 61.4 | 62 | 109 |
+| Built now: west column and inbound road | 2 | 69.5 | 70 | 113 |
+| Optimum, 3 depots (adds the x = 36 aisle) | 3 | 51.1 | 45 | 109 |
+| Optimum, 4 depots | 4 | 46.8 | 40 | 109 |
 
-Bottom-left barely helps because the yard is entered from the east column and left by the west column and the aisles, so vehicles rarely pass that corner, and from there the way back to the quay is long. The site below the return lane catches the east cranes' traffic (QC4 to QC6 are 21 to 39 moves from a station) and is 21 to 26 moves from the nearest quay lane on the way back. The bottom-left sites also sit where the I-295 ramp clips the yard, so they may not be buildable at all.
+The built pair sits at the optimal sites. It scores about 8 moves worse than the optimum because the solve treats a site as one road cell, while a real depot adds its loop. Against the Oct 22 layout the mean detour falls 43 percent and the worst case from 165 to 113 moves. The lesson: the best sites are on the roads vehicles already take back to the quay, so a charge costs almost no extra driving. A third depot on the x = 36 aisle would save another 10 moves on average; that is the AGV owner's call once the fleet size is known. The Oct 22 hand comparison of four sites, including the bottom-left site the class suggested (3 percent saved), missed these roads entirely.
 
 Known simplifications, so nobody is surprised on the poster:
 
@@ -309,7 +313,7 @@ Known simplifications, so nobody is surprised on the poster:
 - A gate is one cell. Queues, scanning time and lane choice belong to the gate module.
 - A yard transfer point is a cell of a one-way service lane, so a vehicle being served stands in the lane and blocks the ones behind it, and a route to a bay passes over the transfer points of the bays before it. That is how an RTG truck lane works; the traffic module decides whether service blocks the lane or is a delay while the vehicle keeps moving. At the quay the bypass lane removes the problem: a vehicle waiting in one of a crane's four lanes blocks only that lane.
 - Handover is coupled: `buffer_capacity` is 0 everywhere, so nothing is set on the ground and a vehicle waits for the crane. The layout holds no containers either way; how long the wait is belongs to the AGV and crane owners.
-- A charging station holds one vehicle. Charge rate, battery state and queueing for a station belong to the AGV module; the layout says where the stations are and that a parked vehicle never cuts the road. From a quay crane's own column the nearest station is 21 to 72 moves away (QC6 21, QC5 22, QC3 38, QC4 39, QC2 55, QC1 72; 315 m to 1.1 km), and from a station the nearest quay lane is 63 to 68 moves (east depot) or 21 to 26 (return-lane depot).
+- A charging station holds one vehicle. Charge rate, battery state and queueing for a station belong to the AGV module; the layout says where the stations are and that a parked vehicle never cuts the road. From any transfer point the nearest station is 51 moves away at the median (worst 95), and from a station the nearest quay lane is 18 to 24 moves.
 - Yard cranes are a group of blocks and a reach rectangle (`RTG1` to `RTG6`). Where a crane travels between blocks, and how long a move takes, are not modelled here.
 
 ## Validation rules
@@ -366,7 +370,7 @@ Every other module talks to this one through `Layout` or the compiled JSON, neve
 
 Module names follow the Oct 15 check-in: ship arrival is the demand and schedules module, AGVs are the traffic module, and container stacking is the yard module.
 
-**Open since the Oct 22 check-in:** from the AGV owner, whether the passing lane is what "two lanes" meant, whether two depots of six are enough for the fleet, and how the AGV movement code treats the quay-to-bypass lane changes (the only two-way links on the map); from the container stacking owner, which blocks make the test yard (a block holds 60 to 180 containers at five tiers, so 200 containers at 90 percent full is about two blocks) and whether separating hazardous cargo from food should become a block `cargo` value; from the gate owner, where the trouble desk and the two scales described on Oct 22 go (new cells, so a schema note before merge); from the ship arrival owner, whether the `B1`/`B2` split at x = 55/56 matches the two berths the arrival queue assumes, and whether the ids (`QC1` to `QC6`, the block names) are what that code expects. For the group: who owns the scheduler that assigns a vehicle to a crane request, which the professor said nobody owns yet; the layout only offers the map it runs on.
+**Open since the Oct 22 check-in:** from the AGV owner, whether the passing lane is what "two lanes" meant, whether two depots of six are enough for the fleet (a third on the x = 36 aisle is the next best site), and how the AGV movement code treats the quay-to-bypass lane changes (the only two-way links on the map); from the container stacking owner, which blocks make the test yard (a block holds 60 to 180 containers at five tiers, so 200 containers at 90 percent full is about two blocks) and whether separating hazardous cargo from food should become a block `cargo` value; from the gate owner, where the trouble desk and the two scales described on Oct 22 go (new cells, so a schema note before merge); from the ship arrival owner, whether the `B1`/`B2` split at x = 55/56 matches the two berths the arrival queue assumes, and whether the ids (`QC1` to `QC6`, the block names) are what that code expects. For the group: who owns the scheduler that assigns a vehicle to a crane request, which the professor said nobody owns yet; the layout only offers the map it runs on.
 
 **Repo shape**
 

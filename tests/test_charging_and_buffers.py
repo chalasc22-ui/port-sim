@@ -424,3 +424,22 @@ def _legend_of(layout):
     ax = draw(layout)
     _legend(ax, layout.to_json())
     return ax.get_legend().get_texts()
+
+
+# ---- container rows and capacity (schema 1.2) ----------------------------------------------
+
+
+def test_container_rows_default_to_one_and_set_capacity(demo, data):
+    block = demo.blocks["A"]
+    assert block.container_rows == 1 and block.capacity == 16 * 1 * 5
+    data["blocks"][0]["container_rows"] = 3
+    again = layout_from_dict(data)
+    assert again.blocks["A"].capacity == 16 * 3 * 5
+    compiled = again.to_json()["blocks"][0]
+    assert (compiled["container_rows"], compiled["capacity"]) == (3, 240)
+
+
+@pytest.mark.parametrize("value", [0, -1, 2.5, "3"])
+def test_rule_10_container_rows_is_a_whole_number_of_at_least_one(broken, value):
+    errors = broken(lambda d: d["blocks"][0].__setitem__("container_rows", value))
+    assert len(errors) == 1 and errors[0].startswith("rule 10: blocks[0].container_rows")

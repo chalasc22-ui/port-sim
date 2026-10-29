@@ -1,0 +1,7 @@
+layout,depots,sites,mean,median,worst
+"built, west-column depot only",1,,90.3,74.0,214
+"built, both depots",2,,69.5,70.0,113
+"optimal, 1 depot",1,"(1,29)",86.3,70.0,210
+"optimal, 2 depots",2,"(1,30) (86,30)",61.4,62.0,109
+"optimal, 3 depots",3,"(1,27) (36,29) (86,30)",51.1,45.0,109
+"optimal, 4 depots",4,"(1,28) (18,27) (36,29) (86,30)",46.8,40.0,109

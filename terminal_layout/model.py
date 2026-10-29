@@ -109,6 +109,12 @@ class Block:
     slots: tuple[str, ...]
     transfer_points: tuple[Point, ...]
     buffer_capacity: int = 0  # containers that may be set down at each of its transfer points
+    container_rows: int = 1  # container rows each cell row stands for; capacity = slots x this x max_tier
+
+    @property
+    def capacity(self) -> int:
+        """Containers the block holds when full: ground slots x container rows x tiers."""
+        return len(self.slots) * self.container_rows * self.max_tier
 
 
 @dataclass(frozen=True)

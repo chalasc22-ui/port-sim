@@ -15,7 +15,7 @@ _LINE_PER_ITEM = ("grid", "cells", "blocks", "berths", "gates", "chargers", "yar
 
 # Written into every compiled file. 1.1 added "chargers", "yard_cranes", "buffer_capacity"
 # and the "charging_station" cell type; 1.2 adds "x" and "transfer_points" (one per lane) to
-# each quay crane and lets "buffer_capacity" be 0. A reader that ignores unknown keys still
+# each quay crane, "container_rows" and "capacity" to each block, and lets "buffer_capacity" be 0. A reader that ignores unknown keys still
 # works.
 COMPILED_VERSION = "1.2"
 
@@ -56,6 +56,8 @@ def compiled_dict(layout: Layout) -> dict[str, Any]:
                 "transfer_points": [list(p) for p in block.transfer_points],
                 "crane": block.crane,
                 "buffer_capacity": block.buffer_capacity,
+                "container_rows": block.container_rows,
+                "capacity": block.capacity,
             }
             for block in layout.blocks.values()
         ],

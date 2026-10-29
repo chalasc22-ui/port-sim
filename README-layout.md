@@ -13,7 +13,7 @@ Python 3.11+. Depends on `pydantic`, `networkx` and `matplotlib` (plus `pytest` 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-pytest                             # 214 tests, a few seconds
+pytest                             # 223 tests, a few seconds
 python examples/demo.py            # prints a tour and writes layout.png
 ```
 
@@ -53,7 +53,7 @@ to the map. Everything returned from it is a copy or read-only.
 | `transfer_points(block_id=None, berth_id=None)` | transfer-point cells |
 | `transfer_point_for(slot_id)` | the transfer point serving that slot's bay |
 | `slot(slot_id)`, `slots_in_block(block_id)` | slot cell; slot ids ordered by bay, then row |
-| `blocks` | `{block_id: Block}` (a `Block` has `buffer_capacity`) |
+| `blocks` | `{block_id: Block}` (a `Block` has `buffer_capacity`, `container_rows` and `capacity`) |
 | `yard_cranes` | `{crane_id: YardCrane}`: the blocks each crane serves and its reach rectangle |
 | `quay_cranes` | `{crane_id: QuayCrane}`: berth, `x`, every transfer lane under the crane, `buffer_capacity` |
 | `berths` | `{berth_id: ((crane_id, (x, y)), ...)}`, the transfer point in each crane's own column |
@@ -114,9 +114,9 @@ imagery and written down as numbers in `tools/build_dames_point.py`.
 |---|---|
 | Grid | 112 x 43 cells (1,680 m by 645 m). The wharf runs along x with the river on top; column 0 is the south-east end of the site and row 0 the land side |
 | Quay | 100 cells = 1,500 m of the real 1,525 m, split into `B1` (`QC1` to `QC3`) and `B2` (`QC4` to `QC6`) at x = 55/56 as a placeholder for the ship arrival owner. Cranes 17 cells (255 m) apart, each with four transfer lanes (x - 1 to x + 2) where a vehicle waits for the crane |
-| Yard | 27 blocks, 419 bays, 786 ground slots, max tier 5: the south-east yard `A1` to `G3`, strip blocks `H1` to `H4` along the apron, the north-west yard `N1` to `N4` |
+| Yard | 27 blocks, 419 bays, 786 ground slots of 3 container rows each, max tier 5 (11,790 containers): the south-east yard `A1` to `G3`, strip blocks `H1` to `H4` along the apron, the north-west yard `N1` to `N4` |
 | Yard cranes | `RTG1` to `RTG3` take the three block columns of rows A to E, `RTG4` rows F and G, `RTG5` the strips, `RTG6` the north-west yard. Each has a reach rectangle (`layout.yard_cranes`), drawn as a dashed box |
-| Charging | two depots of six stations, each with a passing lane: `CH1` to `CH6` at (59, 7) to (64, 7) beside the east column, `CH7` to `CH12` at (93, 29) to (88, 29) below the return lane |
+| Charging | two depots of six stations, each with a passing lane, at sites chosen by a p-median solve: `CH1` to `CH6` at (3, 29) to (8, 29) beside the west column, `CH7` to `CH12` at (88, 30) to (93, 30) beside the inbound road |
 | Transfer buffers | none: `buffer_capacity` is 0 everywhere, a coupled handover (an RTG lifts straight to the vehicle in its truck lane, a quay crane to the vehicle waiting under it) |
 | Gates | in: `G_IN1` (80, 0), `G_IN2` (81, 0). out: `G_OUT1` (84, 0), `G_OUT2` (85, 0) |
 | Not roads | the marsh and ponds in the middle (`blocked`, reason `exclusion`) and the gate buildings (reason `building`) |
@@ -139,15 +139,14 @@ the yard, or carry on to the bypass for the north-west yard; they leave by the s
 has two exits.
 
 Each charging depot is a loop of four rows beside a road: a passing lane and an access lane
-side by side, the stations below the access lane, and an exit lane back to the road. A vehicle
-in the passing lane drives past one waiting in the access lane and drops in further along, so a
-queue at the first station does not block the others. The east depot forks off the east column
-at (57, 8) and rejoins it at (57, 6); the second forks off the return lane at (95, 32) and drains
-into the inbound road at (86, 28). Each is a detour (6 moves against 2; 17 against 9), so it is
-not a shortcut, and with all twelve stations occupied the roads still connect. Twelve stations
-is a placeholder for the AGV owner to confirm. The second depot's site was chosen by measuring
-the charging detour from every transfer point for four candidate sites (the spec has the table);
-the bottom-left site the group suggested saved 3 percent, this one saves 21.
+side by side, the stations next to the access lane, and an exit lane back to the road. A vehicle
+in the passing lane drives past one waiting in the access lane and turns in further along, so a
+queue at the first station does not block the others. The depots sit beside the two northbound
+roads that lead back to the quay: the west column (fork at (1, 28)) and the inbound road (fork at
+(86, 29)). `tools/charger_siting.py` chose those sites by solving the p-median problem exactly over
+every road cell with room for a depot; the built pair is within 8 moves of the optimum and cuts the
+mean charging detour from 122 moves (the Oct 22 layout) to 69.5. Twelve stations is a placeholder
+for the AGV owner to confirm.
 
 One-way roads make trips long. The longest leg between a gate, a block and a crane is 211 moves
 (3.2 km); a test fails if any leg goes over 250. Over the 6,704 gate, crane and bay trips the
@@ -163,6 +162,13 @@ them in the same change.
 ```bash
 python tools/build_dames_point.py
 ```
+
+## Integration smoke test
+
+`python examples/agv_stub.py` drives an AGV from QC1 to block A2 and back, and a truck from the gate
+to block C3 and out, using only `neighbors()`, with each leg checked against `shortest_path`. It is a
+stand-in for the AGV module: speed and handover times are named placeholders, and the router is one
+function to replace.
 
 ## 3D viewer
 
@@ -245,9 +251,10 @@ terminal_layout/
   export.py     compiled JSON and its on-disk formatting
   render.py     render_2d
 layouts/        demo-12x8.json, dames-point.json, their compiled forms, dames-point-trace.png
-tools/          build_dames_point.py: writes and checks the Dames Point files
-tests/          214 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2
-examples/demo.py
+tools/          build_dames_point.py (writes the Dames Point files), charger_siting.py (p-median depot siting),
+                build_viewer_routes.py and bundle_viewer.py (the 3D viewer)
+tests/          223 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2
+examples/       demo.py; agv_stub.py, one vehicle driving full jobs with neighbors() alone
 docs/           layout-spec.md (the spec this was built from), demo-12x8.png, dames-point.png
 ```
 

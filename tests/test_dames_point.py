@@ -31,8 +31,8 @@ RTG_CLUSTERS = {
     "RTG5": ["H1", "H2", "H3", "H4"],
     "RTG6": ["N1", "N2", "N3", "N4"],
 }
-CHARGERS = (  # by (x, y): east depot CH1 at (59, 7) ... CH6 at (64, 7); return-lane depot CH7 at (93, 29) ... CH12 at (88, 29)
-    [(f"CH{n}", (58 + n, 7)) for n in range(1, 7)] + [(f"CH{n}", (100 - n, 29)) for n in range(12, 6, -1)]
+CHARGERS = (  # by (x, y): west-column depot CH1 at (3, 29) ... CH6 at (8, 29); inbound-road depot CH7 at (88, 30) ... CH12 at (93, 30)
+    [(f"CH{n}", (2 + n, 29)) for n in range(1, 7)] + [(f"CH{n}", (81 + n, 30)) for n in range(7, 13)]
 )
 QUAY_CRANES = {"B1": {"QC1": 14, "QC2": 31, "QC3": 48}, "B2": {"QC4": 65, "QC5": 82, "QC6": 99}}
 BYPASS_FORKS = (57, 76, 90, 96, 104)  # bypass-lane cells that also drop south
@@ -248,7 +248,7 @@ def test_trip_lengths_are_the_ones_measured_for_the_v0_2_circulation(dames):
 
 def test_twelve_charging_stations_in_two_depots(dames):
     assert [(c.attrs["id"], c.pos) for c in dames.charging_stations()] == CHARGERS
-    assert {c.exits for c in dames.charging_stations()} == {("S",)}
+    assert {c.exits for c in dames.charging_stations()} == {("N",)}  # in from the access lane, out to the exit lane
     assert dames.validate() == []
 
 
@@ -258,24 +258,27 @@ def test_each_depot_is_a_loop_so_twelve_parked_vehicles_cut_nothing_off(dames):
     assert dames.with_closures(stations).warnings == ()
 
 
-def test_a_depot_is_not_a_shortcut(dames):
-    """East depot: fork (57, 8) to (57, 6) is 2 moves on the road, 6 through the depot.
-    Return-lane depot: fork (95, 32) to (86, 32) is 9 on the road, 17 through the depot."""
-    assert len(dames.shortest_path((57, 8), (57, 6))) - 1 == 2
-    assert len(dames.with_closures({(57, 7)}).shortest_path((57, 8), (57, 6))) - 1 == 6
-    assert len(dames.shortest_path((95, 32), (86, 32))) - 1 == 9
-    assert len(dames.with_closures({(94, 32)}).shortest_path((95, 32), (86, 32))) - 1 == 17
+@pytest.mark.parametrize("x, fork_y", [(1, 28), (86, 29)])  # west column, inbound road
+def test_a_depot_is_not_a_shortcut(dames, x, fork_y):
+    """From the fork to the cell where the exit lane rejoins: 2 moves on the road, 6 through the depot."""
+    assert len(dames.shortest_path((x, fork_y), (x, fork_y + 2))) - 1 == 2
+    assert len(dames.with_closures({(x, fork_y + 1)}).shortest_path((x, fork_y), (x, fork_y + 2))) - 1 == 6
+
+
+def test_the_depots_sit_where_the_p_median_solve_put_them(dames):
+    """tools/charger_siting.py: the best two sites are beside the west column and the inbound road."""
+    assert dames.exits(1, 28) == ["N", "E"] and dames.exits(86, 29) == ["N", "E"]
 
 
 def test_the_passing_lane_gets_a_vehicle_past_a_queue(dames):
-    """With vehicles waiting in front of CH1 to CH3, the passing lane (y = 9) still reaches CH4."""
-    queue = {(59, 8), (60, 8), (61, 8)}
-    path = dames.with_closures(queue).shortest_path((57, 8), (62, 7))
-    assert path is not None and (59, 9) in path and (62, 8) in path
-    access = [x for x in range(59, 65) if dames.cell(x, 8).type == "lane"]   # beyond the entrance cell (58, 8)
-    passing = [x for x in range(58, 65) if dames.cell(x, 9).type == "lane"]
-    assert len(access) + len(passing) == 13  # cells a queue can stand on before it blocks the entrance (7 in v0.1)
-    assert dames.exits(58, 8) == ["N", "E"] and dames.exits(61, 9) == ["E", "S"]
+    """With vehicles waiting in front of CH1 to CH3, the passing lane (y = 27) still reaches CH4."""
+    queue = {(3, 28), (4, 28), (5, 28)}
+    path = dames.with_closures(queue).shortest_path((1, 28), (6, 29))
+    assert path is not None and (4, 27) in path and (6, 28) in path
+    access = [x for x in range(3, 10) if dames.cell(x, 28).type == "lane"]   # beyond the entrance cell (2, 28)
+    passing = [x for x in range(2, 10) if dames.cell(x, 27).type == "lane"]
+    assert len(access) + len(passing) == 15  # cells a queue can stand on before it blocks the entrance (7 in v0.1)
+    assert dames.exits(2, 28) == ["E", "S"] and dames.exits(5, 27) == ["N", "E"]
 
 
 def test_handovers_are_coupled_so_nothing_waits_on_the_ground(dames):
@@ -391,3 +394,9 @@ def test_render_to_a_file_matches_the_picture_in_the_docs(dames, dames_path, tmp
 def test_the_trace_picture_is_there(dames_path):
     width, height = png_size(dames_path.parent / "dames-point-trace.png")
     assert width > 1000 and height > 400
+
+
+def test_yard_capacity_counts_three_container_rows_per_cell_row(dames):
+    """A two-row block is 30 m across: six containers wide, a common 6 + 1 RTG span."""
+    assert {b.container_rows for b in dames.blocks.values()} == {3}
+    assert sum(b.capacity for b in dames.blocks.values()) == 786 * 3 * 5 == 11790

@@ -365,9 +365,15 @@ input[type="range"] { width: 100%; }
   const CONTAINER_COLORS = [0xa8432f, 0x2f6f8f, 0x7a8c3a, 0xc59a2c, 0x5b5f66, 0x8a3b5c, 0x2f7f6b, 0xd2d4d0, 0x3b4a8a, 0xb5642a];
   const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
   const stacks = [];               // { x, y, max, u, slot }
-  for (const b of Object.values(blocks)) for (const s of b.slots) stacks.push({ x: s.x, y: s.y, max: s.e.max_tier, u: hash(s.e.slot), slot: s.e.slot });
+  for (const b of Object.values(blocks)) {
+    const rows = blockInfo[b.id].container_rows || 1;
+    for (const s of b.slots) for (let k = 0; k < rows; k++)
+      stacks.push({ x: s.x, y: s.y, k, rows, max: s.e.max_tier, u: hash(s.e.slot + "/" + k), slot: s.e.slot + "/" + k });
+  }
   const totalPositions = stacks.reduce((a, s) => a + s.max, 0);
-  const contGeo = new THREE.BoxGeometry(12.19 / M_PER_CELL, TIER * 0.96, 0.74);   // 40 ft long along the bay axis
+  const slotCount = Object.values(blocks).reduce((a, b) => a + b.slots.length, 0);
+  const ROW_W = 2.44 / M_PER_CELL;   // a container is 2.44 m wide
+  const contGeo = new THREE.BoxGeometry(12.19 / M_PER_CELL, TIER * 0.96, ROW_W * 0.95);   // 40 ft long along the bay axis
   const containers = new THREE.InstancedMesh(contGeo, new THREE.MeshLambertMaterial(), totalPositions);
   containers.castShadow = true;
   containers.receiveShadow = true;
@@ -387,14 +393,15 @@ input[type="range"] { width: 100%; }
     containerIndex.forEach(([s, t], i) => {
       if (t < heightOf(s, fill)) {
         n++;
-        m4.compose(v3.set(wx(s.x), TILE_TOP.yard_slot + TIER * (t + 0.5), wz(s.y)), q.identity(), s3.set(1, 1, 1));
+        const dz = (s.k - (s.rows - 1) / 2) * ROW_W * 1.12;
+        m4.compose(v3.set(wx(s.x), TILE_TOP.yard_slot + TIER * (t + 0.5), wz(s.y) + dz), q.identity(), s3.set(1, 1, 1));
         containers.setMatrixAt(i, m4);
       } else containers.setMatrixAt(i, ZERO);
     });
     containers.instanceMatrix.needsUpdate = true;
     document.getElementById("fill-out").value = Math.round(fill * 100) + "%";
     document.getElementById("fill-count").textContent =
-      `${n.toLocaleString()} of ${totalPositions.toLocaleString()} container positions (${stacks.length} ground slots × 5 tiers).`;
+      `${n.toLocaleString()} of ${totalPositions.toLocaleString()} container positions (${slotCount} ground slots × 3 rows × 5 tiers).`;
   }
   applyFill();
 
@@ -648,8 +655,10 @@ input[type="range"] { width: 100%; }
     const rows = [["Cell", `(${x}, ${y})`], ["Position", `${x * M_PER_CELL}–${(x + 1) * M_PER_CELL} m E, ${y * M_PER_CELL}–${(y + 1) * M_PER_CELL} m N`]];
     if (e.exits && e.exits.length) rows.push(["Exits", e.exits.map(d => ARROWS[d]).join(", ")]);
     if (t === "yard_slot") {
-      const s = stacks.find(s => s.x === x && s.y === y);
-      rows.push(["Slot", e.slot], ["Block", `${e.block}, bay ${e.bay}, row ${e.row}`], ["Stack", `${heightOf(s, fill)} of ${e.max_tier} tiers (example)`],
+      const here = stacks.filter(s => s.x === x && s.y === y);
+      const held = here.reduce((a, s) => a + heightOf(s, fill), 0);
+      rows.push(["Slot", e.slot], ["Block", `${e.block}, bay ${e.bay}, row ${e.row}`],
+        ["Holds", `${held} of ${here.length * e.max_tier} containers (${here.length} rows × ${e.max_tier} tiers, example fill)`],
         ["Cargo", e.cargo], ["Yard crane", blockInfo[e.block].crane]);
     }
     if (t === "transfer_point") {
