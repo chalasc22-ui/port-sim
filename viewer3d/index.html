@@ -144,7 +144,7 @@ input[type="range"] { width: 100%; }
       <h2 id="h-layers">Layers</h2>
       <div class="toggles">
         <label><input type="checkbox" id="lay-containers" checked> Containers</label>
-        <label><input type="checkbox" id="lay-arrows" checked> Lane arrows</label>
+        <label><input type="checkbox" id="lay-arrows"> Lane arrows</label>
         <label><input type="checkbox" id="lay-cranes" checked> Cranes</label>
         <label><input type="checkbox" id="lay-reach"> RTG reach</label>
         <label><input type="checkbox" id="lay-vehicles" checked> Vehicles</label>
@@ -235,17 +235,18 @@ input[type="range"] { width: 100%; }
   controls.minDistance = 6;
   controls.maxDistance = 220;
 
-  function readSky() {
-    const css = getComputedStyle(document.documentElement).getPropertyValue("--sky").trim() || "#dfe6e8";
-    scene.background = new THREE.Color(css);
-    scene.fog = new THREE.Fog(scene.background, 140, 320);
+  // daylight sky: a vertical gradient from deep blue to a hazy horizon, and haze to match
+  {
+    const c = document.createElement("canvas"); c.width = 4; c.height = 256;
+    const g2 = c.getContext("2d"), grad = g2.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, "#5f8fbf"); grad.addColorStop(0.55, "#a9c6dd"); grad.addColorStop(1, "#dfe7ea");
+    g2.fillStyle = grad; g2.fillRect(0, 0, 4, 256);
+    scene.background = new THREE.CanvasTexture(c);
+    scene.fog = new THREE.Fog(0xd5e0e6, 120, 330);
   }
-  readSky();
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readSky);
-  new MutationObserver(readSky).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-  scene.add(new THREE.HemisphereLight(0xf2f6ff, 0x5a6250, 0.75));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  scene.add(new THREE.HemisphereLight(0xdbe8f5, 0x4a4a3c, 0.62));
+  const sun = new THREE.DirectionalLight(0xfff1dc, 0.95);
   sun.position.set(-40, 70, 45);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -254,9 +255,9 @@ input[type="range"] { width: 100%; }
 
   // ---------- ground tiles: one instanced box per cell, coloured by type ----------
   const PALETTE = {
-    berth: 0x6f767a, quay: 0xcfc8ae, lane: 0x5d6462, transfer_point: 0xe0782c, yard_slot: 0xc9ccc3,
-    gate_in: 0x3f9e6a, gate_out: 0xc8524a, charging_station: 0x7a5ad1, building: 0x4b4f52,
-    exclusion: 0x8f8a5a, unused: 0xb7bba9,
+    berth: 0x8c8a84, quay: 0xb9b5a8, lane: 0x45494b, transfer_point: 0x7a6d3c, yard_slot: 0xa9a69c,
+    gate_in: 0x4d6b57, gate_out: 0x7b524c, charging_station: 0x5f4f91, building: 0x6b6f72,
+    exclusion: 0x56603d, unused: 0x767b62,
   };
   const kindOf = (t, e) => t === "gate" ? (e.flow === "in" ? "gate_in" : "gate_out")
     : t === "blocked" ? ((e && e.reason) === "building" ? "building" : (e && e.reason) === "exclusion" ? "exclusion" : "unused") : t;
@@ -276,7 +277,8 @@ input[type="range"] { width: 100%; }
     m4.compose(v3.set(wx(x), top - h / 2, wz(y)), q.identity(), s3.set(1, h, 1));
     tileMesh.setMatrixAt(i, m4);
     col.setHex(PALETTE[k]);
-    if (k === "lane" || k === "unused" || k === "exclusion") col.offsetHSL(0, 0, ((x * 7 + y * 13) % 5 - 2) * 0.006);
+    if (k === "lane" || k === "unused" || k === "exclusion" || k === "yard_slot" || k === "quay")
+      col.offsetHSL(0, 0, ((x * 7 + y * 13) % 5 - 2) * (k === "unused" || k === "exclusion" ? 0.006 : 0.006));
     tileMesh.setColorAt(i, col);
   });
   tileMesh.receiveShadow = true;
@@ -290,15 +292,15 @@ input[type="range"] { width: 100%; }
     for (let y = 0; y <= firstWaterRow; y++) pts.push(-W / 2, 0.075, H / 2 - y, W / 2, 0.075, H / 2 - y);
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-    scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.06 })));
+    scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.025 })));
   }
 
   // water: one wide plane past the grid, so the river reads as a river
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(W + 260, 120), new THREE.MeshPhongMaterial({ color: 0x3f6f86, shininess: 60, specular: 0x557788 }));
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(W + 260, 120), new THREE.MeshPhongMaterial({ color: 0x2c5f78, shininess: 110, specular: 0x9fb8c8 }));
   water.rotation.x = -Math.PI / 2;
   water.position.set(0, -0.18, wz(firstWaterRow) + 0.5 - 60);
   scene.add(water);
-  const landRim = new THREE.Mesh(new THREE.PlaneGeometry(W + 260, 120), new THREE.MeshLambertMaterial({ color: 0xa9ae9b }));
+  const landRim = new THREE.Mesh(new THREE.PlaneGeometry(W + 260, 120), new THREE.MeshLambertMaterial({ color: 0x7f8a64 }));
   landRim.rotation.x = -Math.PI / 2;
   landRim.position.set(0, -0.31, H / 2 - 4 + 60 - 6);
   scene.add(landRim);
@@ -349,6 +351,7 @@ input[type="range"] { width: 100%; }
     arrows.setMatrixAt(i, m4);
     arrows.setColorAt(i, col.setHex(t === "transfer_point" || t === "charging_station" ? 0x1c1c1c : 0xffffff));
   });
+  arrows.visible = false;   // off by default: the map reads as a real terminal; the Lane arrows toggle shows them
   scene.add(arrows);
 
   // ---------- yard blocks: footprint from the slot cells ----------
@@ -362,7 +365,7 @@ input[type="range"] { width: 100%; }
   const blockInfo = Object.fromEntries(L.blocks.map(b => [b.id, b]));
 
   // ---------- containers: one instanced box per possible (slot, tier) ----------
-  const CONTAINER_COLORS = [0xa8432f, 0x2f6f8f, 0x7a8c3a, 0xc59a2c, 0x5b5f66, 0x8a3b5c, 0x2f7f6b, 0xd2d4d0, 0x3b4a8a, 0xb5642a];
+  const CONTAINER_COLORS = [0x9c3a2c, 0x2d5d86, 0x6f7f3a, 0xb98a2a, 0x5a5e63, 0x7d3651, 0x2f6e62, 0xcfd1cc, 0x34437a, 0xa65a2a, 0x8b2e27, 0x3f6b8f];
   const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
   const stacks = [];               // { x, y, max, u, slot }
   for (const b of Object.values(blocks)) {
@@ -374,7 +377,14 @@ input[type="range"] { width: 100%; }
   const slotCount = Object.values(blocks).reduce((a, b) => a + b.slots.length, 0);
   const ROW_W = 2.44 / M_PER_CELL;   // a container is 2.44 m wide
   const contGeo = new THREE.BoxGeometry(12.19 / M_PER_CELL, TIER * 0.96, ROW_W * 0.95);   // 40 ft long along the bay axis
-  const containers = new THREE.InstancedMesh(contGeo, new THREE.MeshLambertMaterial(), totalPositions);
+  const ribs = (() => {   // corrugated side panels: light and dark vertical ribs, darker rails top and bottom
+    const c = document.createElement("canvas"); c.width = 128; c.height = 32;
+    const g2 = c.getContext("2d");
+    for (let x = 0; x < 128; x += 4) { g2.fillStyle = x % 8 ? "#d9d9d9" : "#ffffff"; g2.fillRect(x, 0, 4, 32); }
+    g2.fillStyle = "#8a8a8a"; g2.fillRect(0, 0, 128, 2); g2.fillRect(0, 30, 128, 2); g2.fillRect(0, 0, 2, 32); g2.fillRect(126, 0, 2, 32);
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+  })();
+  const containers = new THREE.InstancedMesh(contGeo, new THREE.MeshLambertMaterial({ map: ribs }), totalPositions);
   containers.castShadow = true;
   containers.receiveShadow = true;
   const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -411,6 +421,13 @@ input[type="range"] { width: 100%; }
   const steel = new THREE.MeshLambertMaterial({ color: 0xb8352a });
   const white = new THREE.MeshLambertMaterial({ color: 0xe9e9e4 });
   const dark = new THREE.MeshLambertMaterial({ color: 0x2b2f33 });
+  const beam = (a, b, t, mat) => {   // a square member from point a to point b
+    const len = a.distanceTo(b), m = new THREE.Mesh(new THREE.BoxGeometry(t, t, len), mat);
+    m.position.copy(a).add(b).multiplyScalar(0.5);
+    m.lookAt(b);
+    m.castShadow = true;
+    return m;
+  };
   const box = (w, h, d, mat, x, y, z) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z);
@@ -430,8 +447,14 @@ input[type="range"] { width: 100%; }
     const boomY = legH + 0.55, zBack = zLand + 1.8, zOut = wz(quayY + 1) - 4.2;
     for (const dx of [-0.6, 0.6]) g.add(box(0.16, 0.22, zBack - zOut, white, cx + dx, boomY, (zBack + zOut) / 2));
     g.add(box(1.4, 0.2, 0.2, white, cx, boomY, zOut));
-    for (const dx of [-0.6, 0.6]) g.add(box(0.12, 1.7, 0.12, steel, cx + dx, legH + 0.85, zSea + 0.4));   // apex posts
-    g.add(box(1.32, 0.12, 0.12, steel, cx, legH + 1.7, zSea + 0.4));
+    const apex = new THREE.Vector3(cx, legH + 2.4, zSea + 0.2);       // A-frame over the waterside legs
+    for (const dx of [-1.9, 1.9]) for (const z of [zLand, zSea]) g.add(beam(new THREE.Vector3(cx + dx, legH, z), apex, 0.11, steel));
+    for (const dx of [-0.6, 0.6]) {
+      g.add(beam(apex, new THREE.Vector3(cx + dx, boomY, zOut + 0.3), 0.04, white));      // forestays to the boom tip
+      g.add(beam(apex, new THREE.Vector3(cx + dx, boomY, zOut + 2.6), 0.04, white));
+      g.add(beam(apex, new THREE.Vector3(cx + dx, boomY, zBack - 0.2), 0.04, white));     // backstays to the boom tail
+    }
+    for (const dx of [-1.9, 1.9]) g.add(beam(new THREE.Vector3(cx + dx, 0.3, zLand), new THREE.Vector3(cx + dx, legH - 0.2, zSea), 0.06, steel));  // leg bracing
     g.add(box(0.9, 0.5, 0.8, white, cx, boomY - 0.35, zBack - 0.5));                       // machinery house
     const trolley = box(0.8, 0.22, 0.6, dark, cx, boomY - 0.2, wz(quayY + 1) - 1.4);
     g.add(trolley);
@@ -453,16 +476,29 @@ input[type="range"] { width: 100%; }
   scene.add(shipGroup);
   Object.values(berths).forEach((b, i) => {
     const len = (b.x1 - b.x0 + 1) * 0.78, beam = 3.2, zc = wz(b.y) - 0.5 - beam / 2 - 0.25, xc = (wx(b.x0) + wx(b.x1)) / 2;
-    const hull = new THREE.Mesh(new THREE.BoxGeometry(len, 1.1, beam), new THREE.MeshLambertMaterial({ color: i ? 0x2c3e50 : 0x34312d }));
-    hull.position.set(xc, 0.25, zc); hull.castShadow = true;
-    shipGroup.add(hull);
-    const bridge = box(1.2, 1.6, beam * 0.9, white, xc + len / 2 - 3.5, 1.6, zc);
+    const outline = new THREE.Shape();   // plan view: square stern at -x, pointed bow at +x
+    outline.moveTo(-len / 2, -beam / 2); outline.lineTo(len / 2 - 3.2, -beam / 2);
+    outline.quadraticCurveTo(len / 2 - 0.6, -beam / 2, len / 2, 0);
+    outline.quadraticCurveTo(len / 2 - 0.6, beam / 2, len / 2 - 3.2, beam / 2);
+    outline.lineTo(-len / 2, beam / 2); outline.lineTo(-len / 2, -beam / 2);
+    const part = (y0, h, color) => {
+      const geo = new THREE.ExtrudeGeometry(outline, { depth: h, bevelEnabled: false });
+      geo.rotateX(-Math.PI / 2);                 // shape y -> world -z, extrusion -> up
+      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color }));
+      m.position.set(xc, y0, zc); m.castShadow = true;
+      return m;
+    };
+    shipGroup.add(part(-0.25, 0.35, 0x8e2b25));               // red underbody at the waterline
+    shipGroup.add(part(0.1, 0.75, i ? 0x223548 : 0x2b2f33));   // hull
+    shipGroup.add(part(0.84, 0.04, 0x6f6f66));                // deck
+    const bridge = box(1.0, 2.2, beam * 0.92, white, xc - len / 2 + 3.4, 1.95, zc);   // accommodation block, aft
+    for (let f = 0; f < 4; f++) shipGroup.add(box(1.02, 0.06, beam * 0.94, dark, xc - len / 2 + 3.4, 1.2 + f * 0.45, zc));   // window bands
     shipGroup.add(bridge);
-    for (let k = 0; k < Math.floor(len / 1.05) - 6; k++) {
-      const h = 1 + Math.floor(hash(b.id + k) * 4);
+    for (let k = 0; k < Math.floor((len - 8.5) / 1.05); k++) {
+      const h = 2 + Math.floor(hash(b.id + k) * 4);
       const stack = new THREE.Mesh(new THREE.BoxGeometry(0.95, TIER * h, beam * 0.86),
-        new THREE.MeshLambertMaterial({ color: CONTAINER_COLORS[Math.floor(hash(b.id + "c" + k) * CONTAINER_COLORS.length)] }));
-      stack.position.set(xc - len / 2 + 1 + k * 1.05, 0.8 + TIER * h / 2, zc);
+        new THREE.MeshLambertMaterial({ map: ribs, color: CONTAINER_COLORS[Math.floor(hash(b.id + "c" + k) * CONTAINER_COLORS.length)] }));
+      stack.position.set(xc - len / 2 + 4.6 + k * 1.05, 0.86 + TIER * h / 2, zc);
       stack.castShadow = true;
       shipGroup.add(stack);
     }
@@ -482,6 +518,8 @@ input[type="range"] { width: 100%; }
     for (const s of [-1, 1]) g.add(box(0.95, 0.12, 0.14, rtgMat, 0, hgt, s * span / 2));
     for (const dx of [-0.42, 0.42]) g.add(box(0.12, 0.16, span + 0.14, rtgMat, dx, hgt, 0));
     g.add(box(0.7, 0.18, 0.5, dark, 0, hgt - 0.12, 0));
+    g.add(box(0.22, 0.2, 0.22, white, 0.3, hgt - 0.3, span / 2 - 0.3));                   // operator cab
+    for (const s of [-1, 1]) g.add(box(0.85, 0.06, 0.06, rtgMat, 0, hgt * 0.45, s * span / 2));   // leg ties
     for (const dx of [-0.42, 0.42]) for (const s of [-1, 1]) g.add(box(0.16, 0.08, 0.22, dark, dx, 0.12, s * span / 2));
     g.position.set(wx(Math.round((b.x0 + b.x1) / 2)), 0.05, zc);
     g.userData = { x0: wx(b.x0) + 0.5, x1: wx(b.x1) - 0.5, phase: hash(yc.id) * 6.28 };
@@ -503,6 +541,20 @@ input[type="range"] { width: 100%; }
   }
   reachGroup.visible = false;
   scene.add(reachGroup);
+
+  // high-mast floodlights on the roads, about every 150 m
+  {
+    const mast = new THREE.MeshLambertMaterial({ color: 0x9aa0a4 });
+    const lamp = new THREE.MeshBasicMaterial({ color: 0xfff6d8 });
+    for (let y = 2; y < firstWaterRow - 2; y += 1) for (let x = 2; x < W - 2; x += 1) {
+      if ((x * 3 + y * 7) % 10 !== 0 || x % 10 !== 4 || L.grid[y][x] !== "lane") continue;
+      const g = new THREE.Group();
+      g.add(box(0.07, 2.7, 0.07, mast, 0, 1.35, 0));
+      g.add(box(0.5, 0.12, 0.28, lamp, 0, 2.72, 0));
+      g.position.set(wx(x) + 0.42, 0, wz(y) + 0.42);
+      scene.add(g);
+    }
+  }
 
   // charging posts
   const stations = L.chargers.map(c => ({ ...c }));
