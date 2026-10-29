@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "name": "demo-12x8",
+  "cell_size_m": 15,
+  "width": 12,
+  "height": 8,
+  "water": [
+    {"rect": [[0, 7], [11, 7]]}
+  ],
+  "berths": [
+    {
+      "id": "B1",
+      "rect": [[0, 6], [11, 6]],
+      "quay_y": 5,
+      "cranes": [
+        {"id": "QC1", "x": 3},
+        {"id": "QC2", "x": 8}
+      ]
+    }
+  ],
+  "lanes": [
+    {"rect": [[0, 5], [10, 5]], "exits": ["E"], "kind": "quay", "berth": "B1"},
+    {"rect": [[11, 5], [11, 5]], "exits": ["S"]},
+    {"rect": [[11, 2], [11, 4]], "exits": ["S"]},
+    {"rect": [[2, 1], [11, 1]], "exits": ["W"]},
+    {"rect": [[1, 1], [1, 1]], "exits": ["W", "S"]},
+    {"rect": [[0, 1], [0, 4]], "exits": ["N"]}
+  ],
+  "blocks": [
+    {
+      "id": "A",
+      "origin": [2, 2],
+      "bays": 8,
+      "rows": 2,
+      "orientation": "EW",
+      "max_tier": 5,
+      "cargo": "general",
+      "service_side": "S",
+      "crane": "RTG1"
+    }
+  ],
+  "gates": [
+    {"id": "G_IN", "cell": [10, 0], "flow": "in", "exits": ["N"]},
+    {"id": "G_OUT", "cell": [1, 0], "flow": "out", "exits": []}
+  ],
+  "closures": []
+}
