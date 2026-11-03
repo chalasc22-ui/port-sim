@@ -124,6 +124,9 @@ CHARGERS = 6           # charging stations per depot, side by side
 # solve over every road cell with room for a depot puts the best two beside the two northbound roads
 # that lead back to the quay: the west column, and the inbound road (x = 86). Vehicles take those
 # roads to the quay anyway, so a charge costs little detour (see docs/layout-spec.md).
+# Truck exchange zone (x of its first bay, number of truck spots), next to the gate-out column, or
+# None for none. A proposal until the gate and AGV owners confirm where trucks wait and how many.
+EXCHANGE = (RET_X + 1, 4)
 DEPOTS = [("north", WEST_X, 27, "E"), ("north", IN_X, 28, "E")]
 
 
@@ -305,7 +308,28 @@ def build() -> dict:
     # ---- south road: foot of the east column east to the gate-out column ----------------
     lane(EAST_X, SOUTH_Y, IN_LOW_X - 1, SOUTH_Y, ["E"])     # the gate-in column crosses it at IN_LOW_X
     lane(IN_LOW_X + 1, SOUTH_Y, RET_X - 1, SOUTH_Y, ["E"])
-    lane(RET_X, 2, RET_X, SOUTH_Y, ["S"])
+    if EXCHANGE is None:
+        lane(RET_X, 2, RET_X, SOUTH_Y, ["S"])
+    else:
+        # ---- truck exchange zone: trucks never enter the yard ---------------------------
+        # Trucks: gate in -> east along the south road -> (88, 5) carries on east -> down at
+        # x0 + bays -> west along the truck lane (y = 4), stopping at a truck spot -> gate-out
+        # column (88, 4) -> row 1 -> gate out. AGVs: row 1 (fed by the exit road) runs west
+        # past the AGV spots below the stack. The exchange crane XC1 lifts between the sides.
+        x0, bays = EXCHANGE
+        x1 = x0 + bays                                       # the column where trucks turn down
+        lane(RET_X, SOUTH_Y, RET_X, SOUTH_Y, ["E", "S"])     # on east to the truck lane, or down
+        lane(RET_X, 2, RET_X, SOUTH_Y - 1, ["S"])
+        lane(RET_X + 1, SOUTH_Y, x1 - 1, SOUTH_Y, ["E"])
+        lane(x1, SOUTH_Y, x1, SOUTH_Y, ["S"])
+        lane(x1, 4, x1, 4, ["W"])
+        lane(x0, 4, x1 - 1, 4, ["W"])                         # truck lane: the truck spots
+        blocks.append({"id": "XT", "origin": [x0, 3], "bays": bays, "rows": 1, "orientation": "EW", "max_tier": 2,
+                       "cargo": "general", "service_side": "N", "crane": "XC1", "buffer_capacity": YARD_BUFFER,
+                       "notes": "truck side of the exchange stack"})
+        blocks.append({"id": "XA", "origin": [x0, 2], "bays": bays, "rows": 1, "orientation": "EW", "max_tier": 2,
+                       "cargo": "general", "service_side": "S", "crane": "XC1", "buffer_capacity": YARD_BUFFER,
+                       "notes": "AGV side of the exchange stack"})
 
     # ---- apron strip yard: two pairs of one-row blocks, lanes flow east into the inbound road
     for k, (x0, bays) in enumerate(STRIPS):

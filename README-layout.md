@@ -13,7 +13,7 @@ Python 3.11+. Depends on `pydantic`, `networkx` and `matplotlib` (plus `pytest` 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-pytest                             # 227 tests, a few seconds
+pytest                             # 233 tests, a few seconds
 python examples/demo.py            # prints a tour and writes layout.png
 ```
 
@@ -163,6 +163,28 @@ them in the same change.
 python tools/build_dames_point.py
 ```
 
+## Start here if you are on another module
+
+`docs/quickstart.md` has the few calls each module needs, and `CHANGELOG.md` says what changed in each
+version. `python sim/run_demo.py` runs one ship, four imports, one export and two trucks end to end,
+with a stand-in for every module (`sim/modules.py`): replace yours.
+
+## Truck exchange zone
+
+Trucks never enter the yard. They go gate in, east along the south road, into one of 4 truck spots
+on y = 4 (block XT), and back out through the gate-out column. AGVs serve the other side of the same
+small stack from row 1 (block XA, 4 spots). The exchange crane XC1 lifts containers between the two
+sides. Gate in to a truck spot is 23 moves; a spot to gate out is 9. A proposal until the gate and AGV
+owners confirm it (`EXCHANGE` in `tools/build_dames_point.py`).
+
+## Travel times and the fleet stress test
+
+`terminal_layout.timing.travel_time(layout, path, loaded)` gives seconds with PortSim's motion model
+(6 m/s empty, 4 m/s loaded, 1.2 m/s², stopping at each junction and station; `junctions=False` drives
+through junctions). `python tools/fleet_stress.py` runs 6, 12 and 24 AGVs at one vehicle per cell:
+no gridlock up to 36, about 4.4 jobs per AGV per hour, and two thirds of the waiting on the quay row
+(`docs/fleet-waiting.png`).
+
 ## Road graph and road variants
 
 `python tools/export_graph.py` writes `layouts/dames-point.graph.json`: the map as a directed road graph,
@@ -265,7 +287,7 @@ terminal_layout/
 layouts/        demo-12x8.json, dames-point.json, their compiled forms, dames-point-trace.png
 tools/          build_dames_point.py (writes the Dames Point files), charger_siting.py (p-median depot siting),
                 build_viewer_routes.py and bundle_viewer.py (the 3D viewer)
-tests/          227 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2
+tests/          233 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2
 examples/       demo.py; agv_stub.py, one vehicle driving full jobs with neighbors() alone
 docs/           layout-spec.md (the spec this was built from), demo-12x8.png, dames-point.png
 ```

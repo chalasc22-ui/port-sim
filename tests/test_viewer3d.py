@@ -16,7 +16,7 @@ def routes():
 
 
 def test_every_step_of_every_route_is_a_legal_move(dames, routes):
-    assert len(routes) == 6
+    assert len(routes) == 7
     for r in routes:
         path = [tuple(p) for p in r["path"]]
         steps = list(zip(path, path[1:])) + ([(path[-1], path[0])] if r["loop"] else [])

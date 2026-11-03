@@ -23,6 +23,7 @@ BLOCK_IDS = (
     + [f"H{n}" for n in range(1, 5)]  # strip yard along the apron
     + [f"N{n}" for n in range(1, 5)]  # north-west yard
 )
+EXCHANGE_IDS = ["XA", "XT"]  # the truck exchange stack: XT faces the truck lane, XA the AGV road
 RTG_CLUSTERS = {
     "RTG1": ["A1", "B1", "C1", "D1", "E1"],
     "RTG2": ["A2", "B2", "C2", "D2", "E2"],
@@ -93,18 +94,38 @@ def test_berth_is_100_cells_of_the_real_1525_m_split_in_two(dames):
     assert dames.cell(55, 35).attrs["berth"] == "B1" and dames.cell(56, 35).attrs["berth"] == "B2"
 
 
+def yard(dames):
+    """The storage blocks, without the truck exchange stack."""
+    return {k: b for k, b in dames.blocks.items() if k not in EXCHANGE_IDS}
+
+
 def test_blocks_slots_and_bays(dames):
-    assert sorted(dames.blocks) == sorted(BLOCK_IDS) and len(BLOCK_IDS) == 27
-    assert sum(len(dames.slots_in_block(b)) for b in dames.blocks) == 786
-    assert len(dames.cells("yard_slot")) == 786
-    bays = sum(block.bays for block in dames.blocks.values())
-    assert bays == 419 == len(dames.cells("transfer_point")) - 24  # one transfer point per bay, four per crane
-    assert {block.max_tier for block in dames.blocks.values()} == {5}
+    assert sorted(yard(dames)) == sorted(BLOCK_IDS) and len(BLOCK_IDS) == 27
+    assert sorted(dames.blocks) == sorted(BLOCK_IDS + EXCHANGE_IDS)
+    assert sum(len(dames.slots_in_block(b)) for b in yard(dames)) == 786
+    assert len(dames.cells("yard_slot")) == 786 + 8
+    bays = sum(block.bays for block in yard(dames).values())
+    assert bays == 419 == len(dames.cells("transfer_point")) - 24 - 8  # one per bay, four per crane, eight at the exchange
+    assert {block.max_tier for block in yard(dames).values()} == {5}
+
+
+def test_truck_exchange_zone_keeps_trucks_out_of_the_yard(dames):
+    """Trucks: gate in -> a truck spot on y = 4 -> gate out, never above row 6. AGVs serve the other side."""
+    truck_spots = dames.blocks["XT"].transfer_points
+    agv_spots = dames.blocks["XA"].transfer_points
+    assert truck_spots == ((89, 4), (90, 4), (91, 4), (92, 4)) and agv_spots == ((89, 1), (90, 1), (91, 1), (92, 1))
+    assert {dames.blocks[b].crane for b in EXCHANGE_IDS} == {"XC1"}
+    for spot in truck_spots:
+        legs = dames.shortest_path((80, 0), spot) + dames.shortest_path(spot, (84, 0))
+        assert all(y <= 6 for _, y in legs)
+    assert len(dames.shortest_path((80, 0), truck_spots[0])) - 1 == 23
+    assert len(dames.shortest_path(truck_spots[0], (84, 0))) - 1 == 9
+    assert len(dames.shortest_path(dames.blocks["C2"].transfer_points[3], agv_spots[0])) - 1 == 136
 
 
 def test_six_yard_cranes_each_serve_a_cluster_of_blocks(dames):
     served = {}
-    for block in dames.blocks.values():
+    for block in yard(dames).values():
         served.setdefault(block.crane, []).append(block.id)
     assert {crane: sorted(ids) for crane, ids in served.items()} == RTG_CLUSTERS
 
@@ -134,7 +155,7 @@ def test_the_forks_and_aisles_the_trip_lengths_depend_on(dames):
         assert dames.exits(x, 20) == ["N"], x
         assert dames.exits(x, 32) == ["N", "E"] and dames.exits(x, 33) == ["N", "E"], x
     assert dames.exits(57, 6) == ["S", "W"] and dames.exits(57, 5) == ["E"]   # foot of the east column, south road
-    assert dames.exits(80, 5) == ["N", "E"] and dames.exits(88, 5) == ["S"]  # gate-in column crossing; gate-out column
+    assert dames.exits(80, 5) == ["N", "E"] and dames.exits(88, 5) == ["E", "S"]  # gate-in crossing; on to the truck lane, or down
     assert dames.cell(88, 20).type == "blocked"           # the old gate-out column is gone
 
 
@@ -156,7 +177,7 @@ def required_trips(dames):
     cranes = [pos for berth in dames.berths.values() for _, pos in berth]
     gates_in = [c.pos for c in dames.gate_cells("in")]
     gates_out = [c.pos for c in dames.gate_cells("out")]
-    bays = [p for block in dames.blocks.values() for p in block.transfer_points]
+    bays = [p for block in yard(dames).values() for p in block.transfer_points]
     trips = []
     for source in gates_in + cranes:
         reach = nx.single_source_shortest_path_length(graph, source)
@@ -176,7 +197,7 @@ def test_no_trip_between_a_gate_a_crane_and_a_bay_is_longer_than_250_moves(dames
     cranes = [pos for berth in dames.berths.values() for _, pos in berth]
     gates_in = [c.pos for c in dames.gate_cells("in")]
     gates_out = [c.pos for c in dames.gate_cells("out")]
-    bays = [p for block in dames.blocks.values() for p in block.transfer_points]
+    bays = [p for block in yard(dames).values() for p in block.transfer_points]
     assert len(bays) == 419
     legs = []  # (from, to, moves)
     for source in gates_in + cranes:
@@ -290,8 +311,10 @@ def test_every_transfer_point_has_a_finite_buffer_of_two(dames):
 
 
 def test_each_yard_crane_has_its_blocks_and_its_reach(dames):
-    assert {k: v.reach for k, v in dames.yard_cranes.items()} == YARD_REACH
-    assert {k: list(v.blocks) for k, v in dames.yard_cranes.items()} == RTG_CLUSTERS
+    rtgs = {k: v for k, v in dames.yard_cranes.items() if k != "XC1"}
+    assert {k: v.reach for k, v in rtgs.items()} == YARD_REACH
+    assert {k: list(v.blocks) for k, v in rtgs.items()} == RTG_CLUSTERS
+    assert dames.yard_cranes["XC1"].blocks == ("XA", "XT")
 
 
 def test_a_crane_reach_box_holds_every_slot_and_transfer_point_of_its_blocks(dames):
@@ -357,9 +380,9 @@ def test_render_draws_the_stations_the_buffers_and_each_crane_reach(dames):
     render_2d(compiled, ax=ax)
     assert {f"RTG{n}" for n in range(1, 7)} <= {t.get_text() for t in ax.texts}
     assert len([p for p in ax.patches if isinstance(p, Polygon)]) == 12  # one bolt per station
-    assert len([p for p in ax.patches if isinstance(p, Rectangle)]) == 6  # one reach box per yard crane
+    assert len([p for p in ax.patches if isinstance(p, Rectangle)]) == 7  # one reach box per yard crane and the exchange crane
     hatched = [c for c in ax.collections if c.get_hatch() == "////"]
-    assert len(hatched) == 1 and len(hatched[0].get_paths()) == 443  # every transfer point has a buffer of 2
+    assert len(hatched) == 1 and len(hatched[0].get_paths()) == 451  # every transfer point has a buffer of 2
     _legend(ax, compiled)
     legend = {t.get_text() for t in ax.get_legend().get_texts()}
     assert legend >= {"charging station", "transfer point with ground buffer", "yard crane reach"}
@@ -398,5 +421,6 @@ def test_the_trace_picture_is_there(dames_path):
 
 def test_yard_capacity_counts_three_container_rows_per_cell_row(dames):
     """A two-row block is 30 m across: six containers wide, a common 6 + 1 RTG span."""
-    assert {b.container_rows for b in dames.blocks.values()} == {3}
-    assert sum(b.capacity for b in dames.blocks.values()) == 786 * 3 * 5 == 11790
+    assert {b.container_rows for b in yard(dames).values()} == {3}
+    assert sum(b.capacity for b in yard(dames).values()) == 786 * 3 * 5 == 11790
+    assert sum(dames.blocks[b].capacity for b in EXCHANGE_IDS) == 16  # 8 slots, 2 tiers, one row

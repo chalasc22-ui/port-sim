@@ -85,7 +85,7 @@ def trips(layout):
             for n in layout.neighbors(*c.pos):
                 back.setdefault(n, []).append(c.pos)
     cranes = [pos for b in layout.berths.values() for _, pos in b]
-    bays = [p for b in layout.blocks.values() for p in b.transfer_points]
+    bays = [p for k, b in layout.blocks.items() if k not in ("XA", "XT") for p in b.transfer_points]
     out = []
     for s in [g.pos for g in layout.gate_cells("in")] + cranes:
         d = bfs(s, lambda p: layout.neighbors(*p)); out += [d.get(b) for b in bays]

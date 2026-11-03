@@ -57,3 +57,34 @@ def test_road_variants_load_and_keep_every_station(dames, name):
     assert variant.warnings == () and variant.validate() == []
     for kind in ("transfer_point", "charging_station", "gate"):
         assert [c.pos for c in variant.cells(kind)] == [c.pos for c in dames.cells(kind)]
+
+
+def test_segment_time_matches_portsim_worked_examples():
+    """PortSim appendix B.4: 24 m edges, 4 m/s, 2 m/s^2 -> a four-edge trip takes 32 s."""
+    from terminal_layout.timing import segment_time
+
+    assert 4 * segment_time(24, 4.0, 2.0) == pytest.approx(32.0)
+    assert segment_time(4, 4.0, 2.0) == pytest.approx(2 * (4 / 2) ** 0.5)  # too short to reach 4 m/s
+    assert segment_time(0, 4.0) == 0.0
+
+
+def test_travel_time_sums_the_graph_segments(dames):
+    """Timing a path cell by cell gives the same answer as adding up the exported segments."""
+    from terminal_layout.timing import stopping_points, travel_time
+
+    g = tool("export_graph").graph(dames)
+    seg = {(tuple(s["cells"][0]), tuple(s["cells"][-1])): s for s in g["segments"]}
+    stops = stopping_points(dames)
+    path = dames.shortest_path((80, 0), dames.blocks["XT"].transfer_points[0])
+    marks = [i for i, c in enumerate(path) if i == 0 or c in stops or i == len(path) - 1]
+    by_graph = sum(seg[(path[i], path[j])]["time_empty_s"] for i, j in zip(marks, marks[1:]))
+    assert travel_time(dames, path, stops=stops) == pytest.approx(by_graph, abs=0.01)
+    assert travel_time(dames, path, loaded=True, stops=stops) > travel_time(dames, path, stops=stops)
+
+
+def test_driving_through_junctions_is_faster_than_stopping_at_each(dames):
+    from terminal_layout.timing import stopping_points, travel_time
+
+    path = dames.shortest_path(dames.quay_cranes["QC1"].transfer_points[1], dames.blocks["A2"].transfer_points[10])
+    stops = stopping_points(dames)
+    assert travel_time(dames, path, True, stops, junctions=False) < travel_time(dames, path, True, stops)

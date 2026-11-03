@@ -12,7 +12,9 @@ E the road segments between them, each with a length. This turns the cell grid i
 * a node is every cell where something happens: a transfer point, a charging station, a gate, or a
   junction (a cell with more or fewer than one way in or out);
 * a segment follows the one-way road from a node until it reaches the next node; its length is the
-  number of 15 m moves times the cell size, and `cells` lists the grid cells it passes through.
+  number of 15 m moves times the cell size, and `cells` lists the grid cells it passes through;
+* `time_empty_s` and `time_loaded_s` are its travel times from rest to rest, with PortSim's motion
+  model and speeds (terminal_layout/timing.py: 6 m/s empty, 4 m/s loaded, 1.2 m/s^2).
 
 The format is our own until we have PortSim's JSON schema; the fields map one to one onto its
 description (positions, directed segments, lengths, equipment at a position). Positions are cell
@@ -30,6 +32,8 @@ STATION_TYPES = {"transfer_point", "charging_station", "gate"}
 
 
 def graph(layout) -> dict:
+    from terminal_layout.timing import SPEED_EMPTY_M_S, SPEED_LOADED_M_S, segment_time
+
     size = layout.cell_size_m
     roads = [c.pos for c in layout.cells() if layout.is_traversable(*c.pos)]
     out = {p: layout.neighbors(*p) for p in roads}
@@ -58,7 +62,10 @@ def graph(layout) -> dict:
             path = [start, first]
             while not is_node[path[-1]]:
                 path.append(out[path[-1]][0])
-            segments.append({"from": ids[start], "to": ids[path[-1]], "length_m": (len(path) - 1) * size,
+            d = (len(path) - 1) * size
+            segments.append({"from": ids[start], "to": ids[path[-1]], "length_m": d,
+                             "time_empty_s": round(segment_time(d, SPEED_EMPTY_M_S), 3),
+                             "time_loaded_s": round(segment_time(d, SPEED_LOADED_M_S), 3),
                              "cells": [list(c) for c in path]})
     return {"name": layout.name, "cell_size_m": size, "nodes": node_list, "segments": segments}
 

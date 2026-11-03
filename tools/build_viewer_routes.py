@@ -29,8 +29,10 @@ JOURNEYS = [
     ("AGV5", "agv", "QC5 run, then a charge",
      [("crane:QC5", "Takes a container from QC5", True), ("bay:H3:4", "RTG5 lifts it into H3 bay 4", False),
       ("charger:CH9", "Charges at CH9", False)]),
-    ("TRK1", "truck", "Gate in, pick up at G3, gate out",
-     [("gate:G_IN1", "Checks in at G_IN1", False), ("bay:G3:10", "RTG4 loads it", True),
+    ("AGV6", "agv", "Block D3 import to the truck exchange",
+     [("bay:D3:8", "RTG3 sets an import container on it", True), ("bay:XA:2", "Leaves it at the exchange for a truck", False)]),
+    ("TRK1", "truck", "Gate in, pick up at the exchange, gate out",
+     [("gate:G_IN1", "Checks in at G_IN1", False), ("bay:XT:2", "XC1 loads its container", True),
       ("gate:G_OUT1", "Checks out at G_OUT1", False)]),
 ]
 
