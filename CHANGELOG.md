@@ -2,6 +2,11 @@
 
 Newest first. "Breaks" means code written against the previous version may need a change.
 
+## Unreleased
+
+* 3D viewer only, the map is unchanged: the river has moving ripples, sky reflections, a quay wall and a far
+  bank; the marsh shows its ponds, reeds and shrubs; open ground is pavement; the legend lists water.
+
 ## v0.2.1, Nov 3 (schema 1.2, unchanged)
 
 * **Truck exchange zone** by the gate: 4 truck spots (block XT, along y = 4) and 4 AGV spots (block XA,
