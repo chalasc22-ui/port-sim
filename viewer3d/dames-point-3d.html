@@ -235,13 +235,17 @@ input[type="range"] { width: 100%; }
   controls.minDistance = 6;
   controls.maxDistance = 220;
 
-  // daylight sky: a vertical gradient from deep blue to a hazy horizon, and haze to match
+  // daylight sky: a vertical gradient from deep blue to a hazy horizon, and haze to match. The same
+  // gradient, wrapped round as a sky dome, is what the water reflects.
+  let skyDome;
   {
     const c = document.createElement("canvas"); c.width = 4; c.height = 256;
     const g2 = c.getContext("2d"), grad = g2.createLinearGradient(0, 0, 0, 256);
     grad.addColorStop(0, "#5f8fbf"); grad.addColorStop(0.55, "#a9c6dd"); grad.addColorStop(1, "#dfe7ea");
     g2.fillStyle = grad; g2.fillRect(0, 0, 4, 256);
     scene.background = new THREE.CanvasTexture(c);
+    skyDome = new THREE.CanvasTexture(c);
+    skyDome.mapping = THREE.EquirectangularReflectionMapping;
     scene.fog = new THREE.Fog(0xd5e0e6, 120, 330);
   }
 
@@ -257,7 +261,7 @@ input[type="range"] { width: 100%; }
   const PALETTE = {
     berth: 0x8c8a84, quay: 0xb9b5a8, lane: 0x45494b, transfer_point: 0x7a6d3c, yard_slot: 0xa9a69c,
     gate_in: 0x4d6b57, gate_out: 0x7b524c, charging_station: 0x5f4f91, building: 0x6b6f72,
-    exclusion: 0x56603d, unused: 0x767b62,
+    exclusion: 0x6a7744, unused: 0x8d8b80, water: 0x2f5157,
   };
   const kindOf = (t, e) => t === "gate" ? (e.flow === "in" ? "gate_in" : "gate_out")
     : t === "blocked" ? ((e && e.reason) === "building" ? "building" : (e && e.reason) === "exclusion" ? "exclusion" : "unused") : t;
@@ -278,7 +282,7 @@ input[type="range"] { width: 100%; }
     tileMesh.setMatrixAt(i, m4);
     col.setHex(PALETTE[k]);
     if (k === "lane" || k === "unused" || k === "exclusion" || k === "yard_slot" || k === "quay")
-      col.offsetHSL(0, 0, ((x * 7 + y * 13) % 5 - 2) * (k === "unused" || k === "exclusion" ? 0.006 : 0.006));
+      col.offsetHSL(0, 0, ((x * 7 + y * 13) % 5 - 2) * (k === "unused" ? 0.004 : 0.006));   // weathered pavement, cell to cell
     tileMesh.setColorAt(i, col);
   });
   tileMesh.receiveShadow = true;
@@ -295,20 +299,198 @@ input[type="range"] { width: 100%; }
     scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.025 })));
   }
 
-  // water: one wide plane past the grid, so the river reads as a river
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(W + 260, 120), new THREE.MeshPhongMaterial({ color: 0x2c5f78, shininess: 110, specular: 0x9fb8c8 }));
+  // ---------- the river: moving ripples, a shallow edge and deep water, a far bank ----------
+  const hash01 = n => { const s = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return s - Math.floor(s); };   // repeatable "random"
+  const stillWater = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const rippleTex = (() => {       // a tiling normal map summed from waves with whole-number frequencies, so it repeats seamlessly
+    const n = 256, c = document.createElement("canvas"); c.width = c.height = n;
+    const g2 = c.getContext("2d"), img = g2.createImageData(n, n);
+    const waves = [[3, 1, 1.0, 0.3], [1, 4, 0.8, 1.7], [5, -2, 0.55, 2.9], [-2, 7, 0.4, 4.1], [9, 3, 0.25, 0.8], [4, 11, 0.18, 5.3], [13, -6, 0.1, 2.2]];
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      let dx = 0, dy = 0;
+      for (const [fx, fy, a, ph] of waves) {
+        const d = a * 2 * Math.PI * Math.cos(2 * Math.PI * (fx * i + fy * j) / n + ph);
+        dx += d * fx; dy += d * fy;
+      }
+      const nx = -dx * 0.012, ny = -dy * 0.012, l = Math.hypot(nx, ny, 1), o = (j * n + i) * 4;
+      img.data[o] = (nx / l * 0.5 + 0.5) * 255; img.data[o + 1] = (ny / l * 0.5 + 0.5) * 255;
+      img.data[o + 2] = (1 / l * 0.5 + 0.5) * 255; img.data[o + 3] = 255;
+    }
+    g2.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  })();
+  const RIVER_W = W + 260, RIVER_D = 120, FAR_BANK = 62;          // the far bank is about 900 m out
+  const shoreZ = wz(firstWaterRow - 1) + 0.5;                      // the bank beside the berth, and the river's south edge
+  const riverGeo = new THREE.PlaneGeometry(RIVER_W, RIVER_D, 1, 40);
+  {
+    const shallow = new THREE.Color(0x43675f), deep = new THREE.Color(0x1c3a48), c = new THREE.Color(), pos = riverGeo.attributes.position, cols = [];
+    for (let i = 0; i < pos.count; i++) {
+      const t = (pos.getY(i) + RIVER_D / 2) / FAR_BANK;              // 0 at this bank, 1 at the far one
+      const k = t < 0.5 ? Math.pow(t / 0.5, 0.6) : 1 - (t - 0.5) / 0.5 * 0.35;   // deep in the channel, shallower again to the far bank
+      c.copy(shallow).lerp(deep, Math.max(0, Math.min(1, k)));
+      cols.push(c.r, c.g, c.b);
+    }
+    riverGeo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+  }
+  rippleTex.repeat.set(RIVER_W / 4, RIVER_D / 4);                  // one ripple tile every 60 m
+  const water = new THREE.Mesh(riverGeo, new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x11171a, shininess: 160,
+    normalMap: rippleTex, normalScale: new THREE.Vector2(0.38, 0.38),
+    envMap: skyDome, combine: THREE.MixOperation, reflectivity: 0.24 }));
   water.rotation.x = -Math.PI / 2;
-  water.position.set(0, -0.18, wz(firstWaterRow) + 0.5 - 60);
+  water.position.set(0, -0.18, shoreZ - RIVER_D / 2);
+  water.receiveShadow = true;
   scene.add(water);
-  const landRim = new THREE.Mesh(new THREE.PlaneGeometry(W + 260, 120), new THREE.MeshLambertMaterial({ color: 0x7f8a64 }));
+
+  // land around the site and the far bank of the river, so the terminal sits in a landscape
+  const scrub = new THREE.MeshLambertMaterial({ color: 0x768456 });
+  const landRim = new THREE.Mesh(new THREE.PlaneGeometry(RIVER_W, 150), scrub);
   landRim.rotation.x = -Math.PI / 2;
-  landRim.position.set(0, -0.31, H / 2 - 4 + 60 - 6);
+  landRim.position.set(0, -0.06, shoreZ + 75);
+  landRim.receiveShadow = true;
   scene.add(landRim);
-  // water cells inside the grid west and east of the berth
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (L.grid[y][x] === "water" && y < firstWaterRow) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(1, 0.02, 1), water.material);
-    m.position.set(wx(x), -0.18, wz(y));
-    scene.add(m);
+  const farBank = new THREE.Mesh(new THREE.PlaneGeometry(RIVER_W, RIVER_D - FAR_BANK + 2), scrub);
+  farBank.rotation.x = -Math.PI / 2;
+  farBank.position.set(0, -0.08, shoreZ - FAR_BANK - (RIVER_D - FAR_BANK) / 2);
+  scene.add(farBank);
+  {
+    const trees = new THREE.InstancedMesh(new THREE.SphereGeometry(0.5, 7, 5), new THREE.MeshLambertMaterial(), 520);
+    const tc = [0x3f5a32, 0x4a6638, 0x36502e, 0x557040];
+    for (let i = 0; i < 520; i++) {                                  // a ragged tree line along the far bank
+      const x = -RIVER_W / 2 + (i + 0.5) * RIVER_W / 520 + (hash01(i * 3.1) - 0.5) * 0.6, r = 0.6 + hash01(i * 7.7) * 0.9;
+      m4.compose(v3.set(x, -0.08 + r * 0.55, shoreZ - FAR_BANK - 0.6 - hash01(i * 1.9) * 3.5), q.identity(), s3.set(r * 1.3, r * 1.1, r * 1.3));
+      trees.setMatrixAt(i, m4);
+      trees.setColorAt(i, col.setHex(tc[i % tc.length]).offsetHSL(0, 0, (hash01(i * 5.3) - 0.5) * 0.06));
+    }
+    scene.add(trees);
+  }
+
+  // the bank: a concrete quay wall along the berth (a wet band at the waterline, rubber fenders, bollards),
+  // and a sloping rock bank everywhere else along the shore
+  {
+    const bx = []; let by = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (L.grid[y][x] === "berth") { bx.push(x); by = y; }
+    const a = wx(Math.min(...bx)) - 0.5, b = wx(Math.max(...bx)) + 0.5, zf = wz(by) - 0.5;
+    const add = (geo, color, x, y, z) => { const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color })); m.position.set(x, y, z); scene.add(m); return m; };
+    add(new THREE.BoxGeometry(b - a, 0.42, 0.06), 0xa8a396, (a + b) / 2, -0.11, zf - 0.03);   // the wall face, apron to below the water
+    add(new THREE.BoxGeometry(b - a, 0.06, 0.066), 0x3d3c33, (a + b) / 2, -0.155, zf - 0.03); // wet band at the waterline
+    const nF = Math.floor((b - a) / 2), fenders = new THREE.InstancedMesh(new THREE.BoxGeometry(0.24, 0.22, 0.1), new THREE.MeshLambertMaterial({ color: 0x1c1e1f }), nF);
+    const nB = Math.floor((b - a) / 3), bollards = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.05, 0.07, 0.12, 8), new THREE.MeshLambertMaterial({ color: 0x2b2d2f }), nB);
+    for (let i = 0; i < nF; i++) { m4.compose(v3.set(a + 1 + i * 2, -0.03, zf - 0.08), q.identity(), s3.set(1, 1, 1)); fenders.setMatrixAt(i, m4); }
+    for (let i = 0; i < nB; i++) { m4.compose(v3.set(a + 1.5 + i * 3, 0.16, zf + 0.14), q.identity(), s3.set(1, 1, 1)); bollards.setMatrixAt(i, m4); }
+    scene.add(fenders, bollards);
+    // rock bank: a slope from the land down into the water, with rocks scattered on it
+    const slopeMat = new THREE.MeshLambertMaterial({ color: 0x6f6a5c });
+    for (const [x0, x1] of [[-RIVER_W / 2, a], [b, RIVER_W / 2]]) {
+      const s = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, 0.75), slopeMat);
+      s.rotation.x = -Math.PI / 2 - 0.25;                           // tipped so its north edge dips under the water
+      s.position.set((x0 + x1) / 2, -0.12, shoreZ - 0.34);
+      scene.add(s);
+    }
+    const nR = 900, rocks = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.11, 0), new THREE.MeshLambertMaterial(), nR);
+    const span = (RIVER_W - (b - a)) / 2;
+    for (let i = 0; i < nR; i++) {
+      const side = i % 2, u = hash01(i * 2.3), x = side ? b + u * span : a - u * span, r = 0.6 + hash01(i * 4.1) * 0.9;
+      m4.compose(v3.set(x, -0.16 + hash01(i * 6.7) * 0.1, shoreZ - 0.1 - hash01(i * 8.9) * 0.55),
+        q.setFromEuler(new THREE.Euler(hash01(i) * 3, hash01(i * 1.3) * 3, 0)), s3.set(r, r * 0.7, r));
+      rocks.setMatrixAt(i, m4);
+      rocks.setColorAt(i, col.setHex(0x7a7568).offsetHSL(0, 0, (hash01(i * 9.7) - 0.5) * 0.14));
+    }
+    q.identity();
+    scene.add(rocks);
+  }
+
+  // ---------- the marsh in the middle of the site: grass and reeds in soft patches, ponds, shrubs ----------
+  const pondTex = rippleTex.clone();
+  pondTex.needsUpdate = true;
+  pondTex.repeat.set(1 / 5, 1 / 5);                                // pond shapes carry their UVs in world units
+  {
+    let mx0 = W, mx1 = -1, my0 = H, my1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const e = cellAt(x, y);
+      if (L.grid[y][x] === "blocked" && e && e.reason === "exclusion") { mx0 = Math.min(mx0, x); mx1 = Math.max(mx1, x); my0 = Math.min(my0, y); my1 = Math.max(my1, y); }
+    }
+    if (mx1 >= 0) {
+      const X0 = wx(mx0) - 0.5, X1 = wx(mx1) + 0.5, Z0 = wz(my1) - 0.5, Z1 = wz(my0) + 0.5, MW = X1 - X0, MD = Z1 - Z0;
+      // ground: coarse patches of grass, reeds and wet mud blurred together, with fine streaks of grass on top
+      const c = document.createElement("canvas"); c.width = 512; c.height = Math.round(512 * MD / MW);
+      const g2 = c.getContext("2d"), small = document.createElement("canvas"), sw = 28, sh = Math.max(4, Math.round(28 * MD / MW));
+      small.width = sw; small.height = sh;
+      const sg = small.getContext("2d"), patch = ["#6d7b45", "#7e7c4c", "#5d6a3b", "#8a845a", "#55603a", "#4f5636"];
+      for (let j = 0; j < sh; j++) for (let i = 0; i < sw; i++) { sg.fillStyle = patch[Math.floor(hash01(i * 31 + j * 17) * patch.length)]; sg.fillRect(i, j, 1, 1); }
+      g2.imageSmoothingEnabled = true; g2.imageSmoothingQuality = "high";
+      g2.drawImage(small, 0, 0, c.width, c.height);
+      for (let i = 0; i < 9000; i++) {
+        const v = hash01(i * 1.7);
+        g2.fillStyle = v < 0.5 ? "rgba(140,140,86,0.28)" : "rgba(52,62,34,0.24)";
+        g2.fillRect(hash01(i * 2.9) * c.width, hash01(i * 4.3) * c.height, 1, 2 + hash01(i * 6.1) * 3);
+      }
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(MW, MD), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(c),
+        polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set((X0 + X1) / 2, -0.012, (Z0 + Z1) / 2);
+      ground.receiveShadow = true;
+      scene.add(ground);
+      // ponds: wobbly ovals of dark, tea-coloured water, each with a muddy rim
+      const ponds = [[0.27, 0.42, 0.17, 0.25, 0.4], [0.65, 0.3, 0.14, 0.2, 2.1], [0.56, 0.76, 0.1, 0.12, 4.0], [0.87, 0.68, 0.06, 0.1, 5.5]]
+        .map(([fx, fz, rx, rz, p]) => ({ x: X0 + fx * MW, z: Z0 + fz * MD, rx: rx * MW, rz: rz * MD, p }));
+      const wob = (pd, t) => 1 + 0.13 * Math.sin(3 * t + pd.p) + 0.07 * Math.sin(5 * t + pd.p * 1.7) + 0.04 * Math.sin(8 * t + pd.p * 2.3);
+      const outline = (pd, grow) => {
+        const s = new THREE.Shape();
+        for (let i = 0; i <= 64; i++) {
+          const t = i / 64 * Math.PI * 2, r = wob(pd, t) * grow, px = pd.x + pd.rx * r * Math.cos(t), pz = pd.z + pd.rz * r * Math.sin(t);
+          i ? s.lineTo(px, -pz) : s.moveTo(px, -pz);                 // shape y = -world z, laid flat below
+        }
+        return s;
+      };
+      const pondMat = new THREE.MeshPhongMaterial({ color: 0x30443a, specular: 0x10161a, shininess: 160, normalMap: pondTex, normalScale: new THREE.Vector2(0.3, 0.3),
+        envMap: skyDome, combine: THREE.MixOperation, reflectivity: 0.16,
+        polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+      const mudMat = new THREE.MeshLambertMaterial({ color: 0x4b4431, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      for (const pd of ponds) {
+        for (const [grow, mat, y] of [[1.12, mudMat, -0.008], [1, pondMat, -0.004]]) {
+          const m = new THREE.Mesh(new THREE.ShapeGeometry(outline(pd, grow)), mat);
+          m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = true;
+          scene.add(m);
+        }
+      }
+      const inPond = (x, z, grow) => ponds.some(pd => {
+        const dx = (x - pd.x) / pd.rx, dz = (z - pd.z) / pd.rz;
+        return Math.hypot(dx, dz) < wob(pd, Math.atan2(dz, dx)) * grow;
+      });
+      // reeds, thick around the ponds and scattered across the rest, and a few shrubs
+      const nReed = 1400, reeds = new THREE.InstancedMesh(new THREE.ConeGeometry(0.03, 0.3, 4), new THREE.MeshLambertMaterial(), nReed);
+      const reedHex = [0x8d8a55, 0x7a7a46, 0x9b925f, 0x6a7240, 0xa39b68];
+      let n = 0;
+      for (let i = 0; n < nReed && i < nReed * 4; i++) {
+        let x, z;
+        if (i % 5 < 3) {                                             // the ring round a pond
+          const pd = ponds[i % ponds.length], t = hash01(i * 3.7) * Math.PI * 2, r = wob(pd, t) * (1.03 + hash01(i * 5.9) * 0.3);
+          x = pd.x + pd.rx * r * Math.cos(t); z = pd.z + pd.rz * r * Math.sin(t);
+        } else { x = X0 + 0.3 + hash01(i * 7.3) * (MW - 0.6); z = Z0 + 0.3 + hash01(i * 9.1) * (MD - 0.6); }
+        if (inPond(x, z, 1.0)) continue;
+        const h = 0.7 + hash01(i * 2.2) * 0.8;
+        m4.compose(v3.set(x, -0.012 + 0.15 * h, z), q.identity(), s3.set(1, h, 1));
+        reeds.setMatrixAt(n, m4);
+        reeds.setColorAt(n, col.setHex(reedHex[Math.floor(hash01(i * 4.4) * reedHex.length)]));
+        n++;
+      }
+      reeds.count = n;
+      scene.add(reeds);
+      const nShrub = 46, shrubs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.32, 7, 5), new THREE.MeshLambertMaterial(), nShrub);
+      let ns = 0;
+      for (let i = 0; ns < nShrub && i < 400; i++) {
+        const x = X0 + 0.6 + hash01(i * 11.3) * (MW - 1.2), z = Z0 + 0.6 + hash01(i * 13.7) * (MD - 1.2);
+        if (inPond(x, z, 1.25)) continue;
+        const r = 0.7 + hash01(i * 3.3) * 0.7;
+        m4.compose(v3.set(x, -0.012 + 0.22 * r, z), q.identity(), s3.set(r, r * 0.8, r));
+        shrubs.setMatrixAt(ns, m4);
+        shrubs.setColorAt(ns, col.setHex(hash01(i * 2.7) < 0.5 ? 0x46603a : 0x3b5232));
+        ns++;
+      }
+      shrubs.count = ns;
+      shrubs.castShadow = true;
+      scene.add(shrubs);
+    }
   }
 
   // buildings and gate canopies
@@ -711,7 +893,7 @@ input[type="range"] { width: 100%; }
   }
   const NAMES = { berth: "Berth", quay: "Quay lane", lane: "Lane", transfer_point: "Transfer point", yard_slot: "Yard slot",
     gate_in: "Gate in", gate_out: "Gate out", charging_station: "Charging station", building: "Building",
-    exclusion: "Exclusion zone", unused: "Open ground", water: "Water" };
+    exclusion: "Marsh and ponds", unused: "Open ground", water: "Water" };
   const ARROWS = { N: "north", E: "east", S: "south", W: "west" };
   function describe([x, y]) {
     const t = typeAt(x, y), e = cellAt(x, y) || {};
@@ -735,7 +917,7 @@ input[type="range"] { width: 100%; }
     if (t === "charging_station") rows.push(["Station", e.id]);
     if (t === "gate") rows.push(["Gate", `${e.id}, ${e.flow === "in" ? "trucks enter" : "trucks leave"}`]);
     if (t === "blocked" && e.reason) rows.push(["Reason", e.reason]);
-    const sw = k === "water" ? "#3f6f86" : "#" + PALETTE[k].toString(16).padStart(6, "0");
+    const sw = "#" + PALETTE[k].toString(16).padStart(6, "0");
     const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
     return `<div class="kind"><span class="sw" style="background:${sw}"></span>${NAMES[k] || t}</div><dl>` +
       rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join("") + "</dl>" +
@@ -863,7 +1045,7 @@ input[type="range"] { width: 100%; }
   if (blockInfo.XT) facts.push([blockInfo.XT.transfer_points.length, "Truck spots"], [exchangeCranes.size, "Exchange crane"]);
   document.getElementById("facts").innerHTML = facts.map(([n, t]) => `<div><dt>${t}</dt><dd>${n}</dd></div>`).join("");
   const legend = [["quay", "Quay lane"], ["lane", "Lane"], ["transfer_point", "Transfer point"], ["yard_slot", "Yard slot"],
-    ["charging_station", "Charging"], ["gate_in", "Gate in"], ["gate_out", "Gate out"], ["exclusion", "Marsh (no build)"]];
+    ["charging_station", "Charging"], ["gate_in", "Gate in"], ["gate_out", "Gate out"], ["water", "Water (river)"], ["exclusion", "Marsh and ponds (no build)"]];
   document.getElementById("legend").innerHTML = legend.map(([k, t]) =>
     `<li><i style="background:#${PALETTE[k].toString(16).padStart(6, "0")}"></i>${t}</li>`).join("");
 
@@ -906,6 +1088,11 @@ input[type="range"] { width: 100%; }
     } else if (followed) {
       const p = followed.g.position, d = p.clone().sub(controls.target);
       controls.target.add(d); camera.position.add(d);
+    }
+    if (!stillWater) {                                               // the river drifts downstream; ponds barely move
+      const s = now / 1000;
+      rippleTex.offset.set(s * 0.011, s * 0.004);
+      pondTex.offset.set(s * 0.002, -s * 0.0015);
     }
     controls.update();
     renderer.render(scene, camera);
