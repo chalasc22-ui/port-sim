@@ -13,7 +13,7 @@ Python 3.11+. Depends on `pydantic`, `networkx` and `matplotlib` (plus `pytest` 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-pytest                             # 233 tests, a few seconds
+pytest                             # 239 tests, a few seconds
 python examples/demo.py            # prints a tour and writes layout.png
 ```
 
@@ -114,8 +114,8 @@ imagery and written down as numbers in `tools/build_dames_point.py`.
 |---|---|
 | Grid | 112 x 43 cells (1,680 m by 645 m). The wharf runs along x with the river on top; column 0 is the south-east end of the site and row 0 the land side |
 | Quay | 100 cells = 1,500 m of the real 1,525 m, split into `B1` (`QC1` to `QC3`) and `B2` (`QC4` to `QC6`) at x = 55/56 as a placeholder for the ship arrival owner. Cranes 17 cells (255 m) apart, each with four transfer lanes (x - 1 to x + 2) where a vehicle waits for the crane |
-| Yard | 27 blocks, 419 bays, 786 ground slots of 3 container rows each, max tier 5 (11,790 containers): the south-east yard `A1` to `G3`, strip blocks `H1` to `H4` along the apron, the north-west yard `N1` to `N4` |
-| Yard cranes | `RTG1` to `RTG3` take the three block columns of rows A to E, `RTG4` rows F and G, `RTG5` the strips, `RTG6` the north-west yard. Each has a reach rectangle (`layout.yard_cranes`), drawn as a dashed box |
+| Yard | 27 blocks, 419 bays, 786 ground slots of 3 container rows each, max tier 5 (11,790 containers): the south-east yard `A1` to `G3`, strip blocks `H1` to `H4` along the apron, the north-west yard `N1` to `N4`. By the gate, the truck exchange stack (`XA`, `XT`) is two more blocks that are not storage |
+| Yard cranes | `RTG1` to `RTG3` take the three block columns of rows A to E, `RTG4` rows F and G, `RTG5` the strips, `RTG6` the north-west yard, and the exchange crane `XC1` the exchange stack. Each has a reach rectangle (`layout.yard_cranes`), drawn as a dashed box |
 | Charging | two depots of six stations, each with a passing lane, at sites chosen by a p-median solve: `CH1` to `CH6` at (3, 29) to (8, 29) beside the west column, `CH7` to `CH12` at (88, 30) to (93, 30) beside the inbound road |
 | Transfer buffers | 2 containers at every transfer point (`buffer_capacity`), as in PortSim, the course's reference simulator; 0 is available for a coupled handover |
 | Gates | in: `G_IN1` (80, 0), `G_IN2` (81, 0). out: `G_OUT1` (84, 0), `G_OUT2` (85, 0) |
@@ -132,11 +132,11 @@ x = 57 (the east column, which feeds the service lane under each south-east bloc
 and 104 (onto the return lane, y = 32, which runs west to the east column so the east cranes
 reach the yard without circling the site) and at 96 (the exit road). The service lanes of the
 south-east yard flow west. Three roads carry traffic north out of the yard: the west column and
-two aisles between block columns; they join the outbound road, the bypass and the quay. Trucks
-come in at a gate-in lane, go north up the inbound road and turn west onto the return lane for
-the yard, or carry on to the bypass for the north-west yard; they leave by the south road
-(y = 5) from the foot of the east column to the gate-out lanes. Where two roads meet, the cell
-has two exits.
+two aisles between block columns; they join the outbound road, the bypass and the quay. The
+south road (y = 5) runs from the foot of the east column to the gate area; from there the
+inbound road (x = 86) goes north and turns west onto the return lane for the yard, or carries on
+to the bypass for the north-west yard. Trucks stay by the gate: gate in, the truck exchange zone,
+gate out (below). Where two roads meet, the cell has two exits.
 
 Each charging depot is a loop of four rows beside a road: a passing lane and an access lane
 side by side, the stations next to the access lane, and an exit lane back to the road. A vehicle
@@ -145,12 +145,13 @@ queue at the first station does not block the others. The depots sit beside the 
 roads that lead back to the quay: the west column (fork at (1, 28)) and the inbound road (fork at
 (86, 29)). `tools/charger_siting.py` chose those sites by solving the p-median problem exactly over
 every road cell with room for a depot; the built pair is within 8 moves of the optimum and cuts the
-mean charging detour from 122 moves (the Oct 22 layout) to 69.5. Twelve stations is a placeholder
-for the AGV owner to confirm.
+mean charging detour from 122 moves (the best of four hand-picked sites, in the first v0.2 draft) to
+69.4. Twelve stations is a placeholder for the AGV owner to confirm.
 
 One-way roads make trips long. The longest leg between a gate, a block and a crane is 211 moves
 (3.2 km); a test fails if any leg goes over 250. Over the 6,704 gate, crane and bay trips the
-median is 84 moves (v0.1: 86, longest 228).
+median is 84 moves (v0.1: 86, longest 228). The gate legs stay in that count so versions compare,
+though trucks now stop at the exchange zone; the 5,028 crane-to-bay legs alone have a median of 76.
 
 **Changing it.** Edit the numbers in `tools/build_dames_point.py` and run it. It checks the
 layout with `load_layout` first and writes nothing if a rule fails; otherwise it rewrites both
@@ -166,31 +167,40 @@ python tools/build_dames_point.py
 ## Start here if you are on another module
 
 `docs/quickstart.md` has the few calls each module needs, and `CHANGELOG.md` says what changed in each
-version. `python sim/run_demo.py` runs one ship, four imports, one export and two trucks end to end,
-with a stand-in for every module (`sim/modules.py`): replace yours.
+version. `python sim/run_demo.py` runs one ship, five imports, one export and two trucks end to end,
+with a stand-in for every module (`sim/modules.py`): replace yours. QC2's buffer fills, so it waits
+for an AGV: a full buffer takes no more containers, the constraint Dr. Wang described on Oct 15.
 
 ## Truck exchange zone
 
 Trucks never enter the yard. They go gate in, east along the south road, into one of 4 truck spots
-on y = 4 (block XT), and back out through the gate-out column. AGVs serve the other side of the same
-small stack from row 1 (block XA, 4 spots). The exchange crane XC1 lifts containers between the two
-sides. Gate in to a truck spot is 23 moves; a spot to gate out is 9. A proposal until the gate and AGV
+on y = 4 (block XT), and back out through the gate-out column: 20 to 24 moves in, 8 to 12 out. AGVs
+serve the other side of the same small stack from row 1 (block XA, 4 spots). The exchange crane XC1
+lifts containers between the two sides. Trucks share the roads by the gate with AGVs (the column
+x = 80, the south road east of it, the gate-out column and row 1), and row 1 also carries AGVs
+heading west, so an AGV served at XA blocks the row behind it. A proposal until the gate and AGV
 owners confirm it (`EXCHANGE` in `tools/build_dames_point.py`).
 
 ## Travel times and the fleet stress test
 
 `terminal_layout.timing.travel_time(layout, path, loaded)` gives seconds with PortSim's motion model
-(6 m/s empty, 4 m/s loaded, 1.2 m/s², stopping at each junction and station; `junctions=False` drives
-through junctions). `python tools/fleet_stress.py` runs 6, 12 and 24 AGVs at one vehicle per cell:
-no gridlock up to 36, about 4.4 jobs per AGV per hour, and two thirds of the waiting on the quay row
-(`docs/fleet-waiting.png`).
+(6 m/s empty, 4 m/s loaded, 1.2 m/s², stopping at every junction and station on the way as PortSim
+does; `junctions=False` is the optimistic bound, one run with no stops). The same file holds PortSim's
+Jacksonville service times (quay crane 60 s, yard crane 75 s, gate 30 s, handoff 15 s), which the
+stub, the stress test and the demo all use. `python tools/fleet_stress.py` runs 6, 12 and 24 AGVs for
+an hour at one vehicle per cell (a constant 4 m/s), with jobs between random quay lanes and storage
+bays: no gridlock up to 36 AGVs over four seeds, about 4 jobs per AGV per hour, and with 12 or more
+AGVs 57 to 78 percent of all waiting on the quay row (`docs/fleet-waiting.png`, 24 AGVs).
+`--quay-rule` tries other ways to use the quay lanes; keeping through-traffic on the bypass and
+waiting there for a lane halves the jobs, so the bypass is for driving past (`docs/quickstart.md`).
 
 ## Road graph and road variants
 
 `python tools/export_graph.py` writes `layouts/dames-point.graph.json`: the map as a directed road graph,
 the way PortSim describes a terminal. Nodes are stopping points (junctions, transfer points, chargers,
-gates) with positions in metres; segments are the roads between them with `length_m` and the cells they
-cross (750 stopping points, 1,028 segments, 20.3 km of road). The format is ours until we have PortSim's.
+gates) with positions in metres; segments are the roads between them with `length_m`, the driving times
+empty and loaded, and the cells they cross (760 stopping points, 1,039 segments, 20.5 km of road). The
+format is ours until we have PortSim's.
 
 `python tools/build_road_variants.py` writes two variants to `layouts/variants/`, with every station kept:
 `dames-point-two-way` (all roads two-way: median trip 52 moves, longest 119) and `dames-point-one-aisle`
@@ -200,14 +210,15 @@ file: use `with_closures()`.
 ## Integration smoke test
 
 `python examples/agv_stub.py` drives an AGV from QC1 to block A2 and back, and a truck from the gate
-to block C3 and out, using only `neighbors()`, with each leg checked against `shortest_path`. It is a
-stand-in for the AGV module: speed and handover times are named placeholders, and the router is one
-function to replace.
+to the exchange zone and out, using only `neighbors()`, with each leg checked against `shortest_path`.
+It is a stand-in for the AGV module: times come from `terminal_layout.timing`, each leg says whether the
+vehicle is loaded, and the router is one function to replace.
 
 ## 3D viewer
 
 `viewer3d/index.html` draws Dames Point in 3D with Three.js, from the compiled JSON only: stacked yard
-slots, the six quay cranes and six RTGs, both charging depots, lane arrows, and a few demo vehicles.
+slots, the six quay cranes, six RTGs and the exchange crane, both charging depots, lane arrows, and a
+few demo vehicles.
 Drag to orbit, scroll to zoom, click a cell to read it, and use the panel to fly to a crane or depot,
 change the example yard fill, or toggle layers. `window.portViewer.cellCenter(x, y)` gives a cell's 3D
 centre for anything drawn on top.
@@ -221,7 +232,7 @@ The demo vehicles follow `viewer3d/demo-routes.json`, written by `tools/build_vi
 `Layout.shortest_path`; a test checks every step is a legal move. They are examples, not traffic: no
 dispatch and no collisions. Re-run both tools after changing the map.
 
-## Limits in v0.2
+## Limits in v0.2.1
 
 - Width and height are at most 500 cells each.
 - A quay runs east-west only (a berth has one `quay_y` row; cranes sit at an `x` on it).
@@ -275,7 +286,7 @@ the Python API you need no change.
 
 ```
 terminal_layout/
-  model.py      Cell, Block, YardCrane, LayoutError, directions, frozen data
+  model.py      Cell, Block, QuayCrane, YardCrane, LayoutError, directions, frozen data
   schema.py     pydantic models for the authored file (rule 10)
   authored.py   rules 1-3 and the block geometry
   loader.py     load_layout: stages, painting the grid, rules 8 and 14, yard cranes
@@ -284,12 +295,18 @@ terminal_layout/
   layout.py     the Layout class (the API above)
   export.py     compiled JSON and its on-disk formatting
   render.py     render_2d
-layouts/        demo-12x8.json, dames-point.json, their compiled forms, dames-point-trace.png
+  timing.py     travel and service times (PortSim's model and values)
+layouts/        demo-12x8.json, dames-point.json, their compiled forms, the road graph, dames-point-trace.png,
+                variants/ (two-way roads, one aisle removed)
 tools/          build_dames_point.py (writes the Dames Point files), charger_siting.py (p-median depot siting),
+                export_graph.py, build_road_variants.py, fleet_stress.py,
                 build_viewer_routes.py and bundle_viewer.py (the 3D viewer)
-tests/          233 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2
+sim/            run_demo.py and modules.py: the whole terminal on stand-ins for the other modules
+tests/          239 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2,
+                the exports, the demo and the stress test
 examples/       demo.py; agv_stub.py, one vehicle driving full jobs with neighbors() alone
-docs/           layout-spec.md (the spec this was built from), demo-12x8.png, dames-point.png
+docs/           layout-spec.md (the spec this was built from), quickstart.md, charger-siting.csv,
+                demo-12x8.png, dames-point.png, fleet-waiting.png
 ```
 
 ## What the other modules should rely on
@@ -301,7 +318,8 @@ docs/           layout-spec.md (the spec this was built from), demo-12x8.png, da
   bay, which is the RTG's truck lane). A vehicle being served there stands in that lane and blocks
   the ones behind it, unless the traffic module treats service as a delay while it keeps moving.
   A route to a bay passes over the transfer points of the bays before it on the same lane. At the
-  quay a waiting vehicle blocks only its own transfer lane; the rest pass on the bypass lane.
+  quay a waiting vehicle blocks only its own transfer lane; the rest can pass on the bypass lane.
+  `shortest_path` stays on the quay row when the bypass is no shorter, so passing is the router's call.
 - The quay lane and the bypass lane are the one place a vehicle may move in both directions
   between two cells (a lane change at any x). Everywhere else is one way.
 - A charging station is a lane cell with an `id`. `neighbors` and `is_traversable` treat it like any lane

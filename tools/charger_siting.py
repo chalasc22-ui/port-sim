@@ -4,11 +4,13 @@ Run from the repo root:
 
     python tools/charger_siting.py            # prints the table and writes docs/charger-siting.csv
 
-The question the professor framed on Oct 22 as a resource allocation problem is, in operations
+The question Dr. Wang framed on Oct 22 as a resource allocation problem is, in operations
 research terms, the p-median problem: choose k sites so that the total distance from every
 demand point to its nearest site is as small as possible.
 
-* Demand points: every transfer point (443): where a vehicle finishes a job and may head off to charge.
+* Demand points: every transfer point an AGV uses (447: the quay lanes, the yard bays and the AGV
+  side of the exchange stack, not the truck spots): where a vehicle finishes a job and may head off
+  to charge.
 * Candidate sites: every plain lane cell with a 9 x 4 block of open ground beside it, room for a
   depot like the built ones (six stations, passing lane, access lane, exit lane).
 * Cost of charging at site j after a job at i: moves from i to j, plus moves from j back to the
@@ -33,6 +35,7 @@ from scipy.sparse import coo_array
 
 ROOT = Path(__file__).resolve().parent.parent
 DEPOT_W, DEPOT_D = 9, 4   # open ground a depot needs: six stations plus its loop, four rows deep
+TRUCK_ONLY = ("XT",)      # transfer points only trucks use (the truck side of the exchange stack)
 
 
 def bfs(layout, sources, reverse=False):
@@ -57,8 +60,13 @@ def bfs(layout, sources, reverse=False):
     return dist
 
 
+def demand_points(layout):
+    """Every transfer point an AGV hands a container over at: all of them but the truck spots."""
+    return [c.pos for c in layout.cells("transfer_point") if c.attrs["serves"].get("block") not in TRUCK_ONLY]
+
+
 def problem(layout):
-    demand = [c.pos for c in layout.cells("transfer_point")]
+    demand = demand_points(layout)
     quay = [c.pos for c in layout.cells("transfer_point") if "berth" in c.attrs["serves"]]
     to_quay = bfs(layout, quay, reverse=True)          # cell -> moves to the nearest quay transfer point
 

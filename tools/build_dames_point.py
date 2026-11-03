@@ -23,10 +23,10 @@ Yard cranes. Six rubber-tired gantries, each given one cluster of blocks: RTG1 t
 block columns of rows A to E (5 blocks each), RTG4 rows F and G, RTG5 the apron strips H1 to H4,
 RTG6 the north-west yard N1 to N4. An RTG spans its block plus one truck lane, so the lane
 south of each block row is where vehicles stand for the handover: one transfer point per bay,
-and the crane lifts straight between the stack and the vehicle (buffer_capacity 0, no
-container is set on the ground). A waiting vehicle blocks the lane behind it, as in a real
-RTG lane; the parallel service lanes and the bypass lane beside the quay are what keep the
-rest of the traffic moving.
+each with room for 2 containers on the ground (see Transfer buffers below). A waiting vehicle
+blocks the lane behind it, as in a real RTG lane; the parallel service lanes and the bypass
+lane beside the quay are what keep the rest of the traffic moving. A seventh crane, the
+exchange crane XC1, serves the truck exchange stack (XA and XT) by the gate.
 
 Frame. The satellite image is rotated 128 degrees so the wharf runs along +x with the
 river on top, which is also how the 12 x 8 demo is drawn. One cell is 15 m (about 7.3
@@ -53,14 +53,24 @@ Circulation (everything is one way; the arrows in render_2d show it):
   each block's containers leave by the nearest one.
 * The apron strips H1 to H4 have their own lanes (y = 30 and 28), which flow east into the
   inbound road.
-* Inbound: the two gate-in lanes (80, 0) and (81, 0) go north, then east to the inbound road
-  (x = 86) and north. At y = 32 a truck turns west along the return lane to the east column
-  and the south-east yard, or carries on north to the bypass lane and east to the
-  north-west yard.
+* Inbound road: from row 1, the column x = 80 goes north to the south road; at (80, 5) a vehicle
+  turns north, then east to the inbound road (x = 86) and north. At y = 32 it turns west along
+  the return lane to the east column and the south-east yard, or carries on north to the bypass
+  lane and east to the north-west yard. The two gate-in lanes (80, 0) and (81, 0) feed the same
+  column, but trucks turn east at (80, 5) for the exchange zone (below) and never take the
+  inbound road.
 * Outbound: the outbound road (y = 32) runs east from the west column to the east column,
   then south down the column to its foot, east along the south road (y = 5) to x = 88,
-  south to row 1 and west to the two gate-out lanes (84, 0) and (85, 0). Row 1 flows west,
-  so a truck that misses a gate-out lane loops back into the inbound road.
+  south to row 1 and west past the two gate-out lanes (84, 0) and (85, 0). Row 1 flows west,
+  so a vehicle that does not leave by a gate-out lane loops back into the inbound road.
+* Truck exchange zone (EXCHANGE). Trucks go gate in -> north up x = 80 -> east along the south
+  road -> on east at (88, 5) -> down at x = 93 -> west along the truck lane (y = 4), where the
+  four truck spots (XT) face a one-row stack -> down the gate-out column (x = 88) -> gate out.
+  They share only the roads by the gate with AGVs and never enter the yard. AGVs reach the
+  other side of the stack (XA, four spots) on row 1, which also carries other AGV traffic
+  west, so an AGV being served there blocks the row behind it, as in a yard service lane. The
+  exchange crane XC1 lifts containers between the two sides. A proposal until the gate and AGV
+  owners confirm it.
 * Forks and crossings are cells with two exits.
 * Charging depots (schema 1.1, passing lane added for 1.2). Each depot is a loop of four
   rows beside a road: a passing lane and an access lane side by side (a vehicle in the
@@ -71,10 +81,10 @@ Circulation (everything is one way; the arrows in render_2d show it):
   (fork at (1, 28)) and CH7 to CH12 off the inbound road (fork at (86, 29)), both on roads that
   lead back to the quay; tools/charger_siting.py chose the sites (DEPOTS). A depot is a
   detour off the road, so it shortens no trip.
-* Transfer buffers. buffer_capacity is 2 everywhere, matching PortSim's finite buffer (0 would be a coupled
-  handover). Was 0 on Oct 22: an RTG lane and a quay crane with plain
-  AGVs are coupled handovers, nothing waits on the ground. The field stays so a Lift-AGV
-  rack terminal can be described (set it per block or crane).
+* Transfer buffers. buffer_capacity is 2 everywhere (YARD_BUFFER, QUAY_BUFFER): up to two
+  containers can wait on the ground at a transfer point between the crane and the vehicles,
+  PortSim's finite transfer buffer (2 in its grid layouts, 3 at Jacksonville). 0 would be a
+  coupled handover, where the vehicle waits under the crane and nothing is set down.
 """
 
 import json

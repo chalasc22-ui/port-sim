@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from terminal_layout.timing import stopping_points, travel_time
+from terminal_layout.timing import GATE_SERVICE_S, stopping_points, travel_time
 
 
 @dataclass
@@ -41,10 +41,12 @@ class ShipArrival:
         return [Vessel("MV-DEMO", "B1", 0.0)]
 
     def discharge_list(self, vessel: Vessel) -> list[Container]:
-        """Containers to take off the ship, in crane order. Two go out by truck."""
+        """Containers to take off the ship, in crane order. QC2 has three, one more than its buffer
+        holds, so it has to wait for an AGV; one of QC3's goes out by truck."""
         return [
             Container("IMP-1", "import", "QC2"), Container("IMP-2", "import", "QC2"),
-            Container("IMP-3", "import", "QC3", truck="TRK-A"), Container("IMP-4", "import", "QC3"),
+            Container("IMP-3", "import", "QC2"),
+            Container("IMP-4", "import", "QC3", truck="TRK-A"), Container("IMP-5", "import", "QC3"),
         ]
 
 
@@ -102,11 +104,11 @@ class Truck:
 class Gate:
     """REPLACE: the gate module (appointments, ID check, weighing, help desk)."""
 
-    CHECK_S = 60.0
+    CHECK_S = GATE_SERVICE_S          # PortSim's gate time, 30 s
 
     def truck_arrivals(self) -> list[Truck]:
         return [
-            Truck("TRK-A", 300.0, picks="IMP-3"),
+            Truck("TRK-A", 300.0, picks="IMP-4"),
             Truck("TRK-B", 120.0, drops=Container("EXP-1", "export", "QC2", truck="TRK-B")),
         ]
 

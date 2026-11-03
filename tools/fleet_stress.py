@@ -10,16 +10,19 @@ This is a test of the map, not an AGV controller. The rules are deliberately sim
 points at the roads, not at a clever or a poor dispatcher:
 
 * Jobs alternate import (quay crane -> yard bay) and export (yard bay -> quay crane), with the
-  crane and the bay drawn at random (seeded). A vehicle goes to the pickup, waits for the
-  handover, drives to the drop-off, waits again, and takes the next job.
-* Time runs in ticks of one move (15 m at SPEED_M_S). A cell holds one vehicle. Each tick, in a
-  rotating order, a vehicle moves to the next cell of its shortest path if that cell is free.
+  crane and the bay drawn at random (seeded) from the storage blocks; the truck exchange stack
+  (XA, XT) is left out. A vehicle goes to the pickup, waits for the handover, drives to the
+  drop-off, waits again, and takes the next job.
+* Time runs in ticks of one move (15 m at SPEED_M_S, a constant speed: no acceleration, unlike
+  terminal_layout.timing). A cell holds one vehicle. Each tick, in a rotating order, a vehicle
+  moves to the next cell of its route if that cell is free.
 * A vehicle waiting at a transfer point stands in the lane, as on the real map, and blocks it.
 * A vehicle blocked for REPLAN ticks plans again around the cells that are occupied right now.
 * Gridlock: no vehicle can move for GRIDLOCK ticks while some want to. It is reported, then the
   run ends, because the simple rules cannot recover from it.
 
-Output: jobs per hour, average wait per job, gridlocks, and the cells where vehicles waited most.
+Output: jobs per hour, average and longest wait per job, the share of all waiting that happened on
+the quay row, gridlocks, and the cells where vehicles waited most.
 """
 
 from __future__ import annotations
@@ -27,35 +30,77 @@ from __future__ import annotations
 import argparse
 import random
 import sys
+import heapq
 from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from terminal_layout.timing import QUAY_SERVICE_S, YARD_SERVICE_S  # noqa: E402  PortSim Jacksonville: 60 s, 75 s
+
 SPEED_M_S = 4.0          # PortSim's loaded speed; empty vehicles are faster there (6 m/s)
-QUAY_HANDOVER_S = 60     # PortSim Jacksonville quay and yard service times
-YARD_HANDOVER_S = 75
+QUAY_HANDOVER_S = QUAY_SERVICE_S
+YARD_HANDOVER_S = YARD_SERVICE_S
+EXCHANGE_BLOCKS = ("XA", "XT")   # the truck exchange stack: not yard storage
 HOUR_S = 3600
 REPLAN = 8               # ticks blocked before planning around occupied cells
 GRIDLOCK = 60            # ticks with nobody able to move
 
 
+def job_places(layout):
+    """Where jobs start and end: every quay transfer lane, and every bay of the storage blocks."""
+    quay_lanes = [p for c in layout.quay_cranes.values() for p in c.transfer_points]
+    bays = [p for k, b in layout.blocks.items() if k not in EXCHANGE_BLOCKS for p in b.transfer_points]
+    return quay_lanes, bays
+
+
 def run(layout, fleet: int, seconds: int = HOUR_S, seed: int = 7, quay_rule: str = "lane"):
     """quay_rule "lane": a job names one transfer lane and the vehicle drives to it by the
-    shortest path. "crane": a job names a crane; the vehicle takes the first of its free lanes
-    and comes up from the bypass lane, so it never queues behind a vehicle being served."""
+    shortest path, which on a tie stays on the quay row, through other cranes' lanes.
+    "crane": a job names a crane; the vehicle takes the first of its free lanes, coming up from
+    the bypass cell below it, but still gets there by the shortest path.
+    "bypass": as "crane", and of the routes with the fewest moves, the one through the fewest other
+    cranes' transfer lanes, so through-traffic takes the bypass lane whenever it is no longer."""
     rng = random.Random(seed)
     tick_s = layout.cell_size_m / SPEED_M_S
-    quay_lanes = [p for c in layout.quay_cranes.values() for p in c.transfer_points]
+    quay_lanes, bays = job_places(layout)
     lanes_of = {p: c.transfer_points for c in layout.quay_cranes.values() for p in c.transfer_points}
-    bays = [p for b in layout.blocks.values() for p in b.transfer_points]
+    keep_off = frozenset(quay_lanes) if quay_rule == "bypass" else frozenset()
     starts = rng.sample([c.pos for c in layout.cells("lane")], fleet)
     path_cache = {}
+
+    def fewest(a, b, avoid):
+        """Fewest moves from a to b, never through avoid; ties go to the route through the fewest
+        cells of keep_off (other cranes' transfer lanes)."""
+        best, prev, heap, n = {a: (0, 0)}, {a: None}, [(0, 0, 0, a)], 1
+        while heap:
+            moves, lanes, _, u = heapq.heappop(heap)
+            if u == b:
+                break
+            if (moves, lanes) > best[u]:
+                continue
+            for w in layout.neighbors(*u):
+                if w in avoid and w != b:
+                    continue
+                cost = (moves + 1, lanes + (w in keep_off and w != b))
+                if w not in best or cost < best[w]:
+                    best[w], prev[w] = cost, u
+                    heapq.heappush(heap, (*cost, n, w))
+                    n += 1
+        if b not in prev:
+            return None
+        out = [b]
+        while prev[out[-1]] is not None:
+            out.append(prev[out[-1]])
+        return out[::-1]
 
     def path(a, b, avoid=frozenset()):
         if not avoid:
             if (a, b) not in path_cache:
-                path_cache[(a, b)] = layout.shortest_path(a, b)
+                path_cache[(a, b)] = fewest(a, b, frozenset()) if keep_off else layout.shortest_path(a, b)
             return path_cache[(a, b)]
+        if keep_off:
+            return fewest(a, b, avoid)
         return layout.with_closures(avoid - {a, b}).shortest_path(a, b)
 
     vehicles = []
@@ -64,8 +109,8 @@ def run(layout, fleet: int, seconds: int = HOUR_S, seed: int = 7, quay_rule: str
                          "dwell": 0, "plan": None, "job": None, "waited": 0})
 
     def quay_target(v, lane):
-        """With the crane rule: a free lane of the same crane, reached from the bypass cell below it."""
-        if quay_rule != "crane":
+        """With the crane and bypass rules: a free lane of the same crane, reached from the bypass cell below it."""
+        if quay_rule == "lane":
             return lane, path(v["at"], lane)
         free = [p for p in lanes_of[lane] if p not in occupied] or [lane]
         best, best_path = None, None
@@ -152,7 +197,11 @@ def run(layout, fleet: int, seconds: int = HOUR_S, seed: int = 7, quay_rule: str
         else:
             stuck = 0
     hours = (t + 1) * tick_s / 3600
+    quay = {c.pos for c in layout.quay_cells()}
+    total = sum(waits.values())
     return {"fleet": fleet, "jobs_per_hour": done / hours, "mean_wait_s": (sum(job_waits) / len(job_waits)) if job_waits else 0.0,
+            "max_wait_s": max(job_waits, default=0.0),
+            "quay_share": (sum(n for c, n in waits.items() if c in quay) / total) if total else 0.0,
             "gridlock_at_s": gridlock, "waits": waits, "tick_s": tick_s}
 
 
@@ -180,21 +229,21 @@ def main(argv=None) -> int:
     ap.add_argument("--fleet", type=int, nargs="*", default=[6, 12, 24])
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--png", default=None, help="waiting heat map for the last fleet size")
-    ap.add_argument("--quay-rule", choices=["lane", "crane"], default="lane",
-                    help="lane: go to one named transfer lane; crane: take a free lane of the crane, from the bypass")
+    ap.add_argument("--quay-rule", choices=["lane", "crane", "bypass"], default="lane",
+                    help="lane: go to one named transfer lane; crane: take a free lane of the crane, from the bypass; "
+                         "bypass: as crane, and never drive through another crane's lanes")
     ap.add_argument("--hours", type=float, default=1.0)
     args = ap.parse_args(argv)
-    sys.path.insert(0, str(ROOT))
     from terminal_layout import load_layout
 
     layout = load_layout(args.layout)
     print(f"{layout.name}: {args.hours:g} simulated hour(s) per fleet size, {SPEED_M_S} m/s, seed {args.seed}, quay rule {args.quay_rule}")
-    print(f"{'AGVs':>5} {'jobs/hour':>10} {'avg wait per job (s)':>21} {'gridlock':>10}  busiest waiting cells")
+    print(f"{'AGVs':>5} {'jobs/hour':>10} {'wait/job (s)':>13} {'longest (s)':>12} {'on quay row':>12} {'gridlock':>10}  busiest waiting cells")
     for n in args.fleet:
         r = run(layout, n, seconds=int(args.hours * HOUR_S), seed=args.seed, quay_rule=args.quay_rule)
         top = ", ".join(f"{c}: {round(w * r['tick_s'])} s" for c, w in r["waits"].most_common(3))
         gl = f"{r['gridlock_at_s']} s" if r["gridlock_at_s"] is not None else "none"
-        print(f"{n:5d} {r['jobs_per_hour']:10.1f} {r['mean_wait_s']:21.1f} {gl:>10}  {top}")
+        print(f"{n:5d} {r['jobs_per_hour']:10.1f} {r['mean_wait_s']:13.1f} {r['max_wait_s']:12.0f} {r['quay_share']:12.0%} {gl:>10}  {top}")
     if args.png:
         heatmap(layout, r["waits"], r["tick_s"], args.png)
         print(f"wrote {args.png}")

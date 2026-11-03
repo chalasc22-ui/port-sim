@@ -121,7 +121,7 @@ input[type="range"] { width: 100%; }
     <button class="panel-toggle" id="panel-toggle" type="button" aria-expanded="true">Hide</button>
     <header>
       <h1>Dames Point Terminal</h1>
-      <p class="sub">Terminal layout v0.2, schema 1.2. One cell is 15 m. Drag to orbit, scroll or pinch to zoom, right-drag to pan.</p>
+      <p class="sub">Terminal layout v0.2.1, schema 1.2. One cell is 15 m. Drag to orbit, scroll or pinch to zoom, right-drag to pan.</p>
     </header>
 
     <section aria-labelledby="h-view">
@@ -363,6 +363,10 @@ input[type="range"] { width: 100%; }
     b.slots.push({ x, y, e });
   }
   const blockInfo = Object.fromEntries(L.blocks.map(b => [b.id, b]));
+  // the truck exchange stack is served by an exchange crane (XC1), not an RTG, and is not yard storage
+  const exchangeCranes = new Set(L.yard_cranes.filter(yc => yc.id.startsWith("XC")).map(yc => yc.id));
+  const storageBlocks = L.blocks.filter(b => !exchangeCranes.has(b.crane));
+  const exchangeBlocks = L.blocks.filter(b => exchangeCranes.has(b.crane)).map(b => blocks[b.id]);
 
   // ---------- containers: one instanced box per possible (slot, tier) ----------
   const CONTAINER_COLORS = [0x9c3a2c, 0x2d5d86, 0x6f7f3a, 0xb98a2a, 0x5a5e63, 0x7d3651, 0x2f6e62, 0xcfd1cc, 0x34437a, 0xa65a2a, 0x8b2e27, 0x3f6b8f];
@@ -374,7 +378,8 @@ input[type="range"] { width: 100%; }
       stacks.push({ x: s.x, y: s.y, k, rows, max: s.e.max_tier, u: hash(s.e.slot + "/" + k), slot: s.e.slot + "/" + k });
   }
   const totalPositions = stacks.reduce((a, s) => a + s.max, 0);
-  const slotCount = Object.values(blocks).reduce((a, b) => a + b.slots.length, 0);
+  const yardCapacity = storageBlocks.reduce((a, b) => a + b.capacity, 0);   // ground slots × container rows × tiers
+  const storageSlots = storageBlocks.reduce((a, b) => a + b.slots.length, 0);
   const ROW_W = 2.44 / M_PER_CELL;   // a container is 2.44 m wide
   const contGeo = new THREE.BoxGeometry(12.19 / M_PER_CELL, TIER * 0.96, ROW_W * 0.95);   // 40 ft long along the bay axis
   const ribs = (() => {   // corrugated side panels: light and dark vertical ribs, darker rails top and bottom
@@ -411,7 +416,8 @@ input[type="range"] { width: 100%; }
     containers.instanceMatrix.needsUpdate = true;
     document.getElementById("fill-out").value = Math.round(fill * 100) + "%";
     document.getElementById("fill-count").textContent =
-      `${n.toLocaleString()} of ${totalPositions.toLocaleString()} container positions (${slotCount} ground slots × 3 rows × 5 tiers).`;
+      `${n.toLocaleString()} of ${totalPositions.toLocaleString()} container positions: the yard's ${yardCapacity.toLocaleString()} ` +
+      `(${storageSlots} ground slots)` + (totalPositions > yardCapacity ? `, plus ${totalPositions - yardCapacity} in the exchange stack.` : ".");
   }
   applyFill();
 
@@ -508,10 +514,16 @@ input[type="range"] { width: 100%; }
   const rtgMat = new THREE.MeshLambertMaterial({ color: 0xe0b22c });
   const rtgs = [];
   for (const yc of L.yard_cranes) {
+    // the gantry stands over the crane's first block, plus any block of the same crane right against
+    // it (the exchange stack: XA and XT side by side, so XC1 spans both and both lanes)
     const b = blocks[yc.blocks[0]];
-    const tp = blockInfo[b.id].transfer_points;
-    const laneY = tp[0][1];
-    const yLow = Math.min(b.y0, laneY), yHigh = Math.max(b.y1, laneY);
+    const under = [b];
+    for (const id of yc.blocks.slice(1)) {
+      const o = blocks[id];
+      if (o.x0 === b.x0 && o.x1 === b.x1 && under.some(u => o.y0 === u.y1 + 1 || o.y1 === u.y0 - 1)) under.push(o);
+    }
+    const laneYs = under.map(u => blockInfo[u.id].transfer_points[0][1]);
+    const yLow = Math.min(...under.map(u => u.y0), ...laneYs), yHigh = Math.max(...under.map(u => u.y1), ...laneYs);
     const g = new THREE.Group();
     const span = wz(yLow) - wz(yHigh) + 0.9, zc = (wz(yLow) + wz(yHigh)) / 2, hgt = TIER * 6 + 0.25;
     for (const dx of [-0.42, 0.42]) for (const s of [-1, 1]) g.add(box(0.1, hgt, 0.1, rtgMat, dx, hgt / 2, s * span / 2));
@@ -792,7 +804,10 @@ input[type="range"] { width: 100%; }
     return [yc.id, `${yc.id}: blocks ${yc.blocks[0]}–${yc.blocks[yc.blocks.length - 1]}`, (wx(x0) + wx(x1)) / 2, (wz(y0) + wz(y1)) / 2, 24];
   }));
   addFocus("Charging", depots.map((d, i) => ["depot" + i, d.name, (wx(d.x0) + wx(d.x1)) / 2, wz(d.y), 10]));
-  addFocus("Gates", [["gates", "Gate complex", wx(82), wz(1), 10]]);
+  const exchangeFocus = exchangeBlocks.length ? [["exchange", "Truck exchange zone",
+    (wx(Math.min(...exchangeBlocks.map(b => b.x0))) + wx(Math.max(...exchangeBlocks.map(b => b.x1)))) / 2,
+    (wz(Math.min(...exchangeBlocks.map(b => b.y0))) + wz(Math.max(...exchangeBlocks.map(b => b.y1)))) / 2, 8]] : [];
+  addFocus("Gates", [["gates", "Gate complex", wx(82), wz(1), 10], ...exchangeFocus]);
   focusEl.addEventListener("change", () => {
     const f = focusTargets[focusEl.value];
     followed = null; setFollowButton();
@@ -841,10 +856,11 @@ input[type="range"] { width: 100%; }
   const count = t => L.grid.flat().filter(c => c === t).length;
   const facts = [
     [quayCranes.length, "Quay cranes"], [Object.keys(berths).length, "Berths"],
-    [L.blocks.length, "Yard blocks"], [L.yard_cranes.length, "Yard cranes (RTG)"],
-    [count("yard_slot").toLocaleString(), "Ground slots"], [count("transfer_point"), "Transfer points"],
+    [storageBlocks.length, "Yard blocks"], [L.yard_cranes.length - exchangeCranes.size, "Yard cranes (RTG)"],
+    [storageBlocks.reduce((n, b) => n + b.slots.length, 0).toLocaleString(), "Ground slots"], [count("transfer_point"), "Transfer points"],
     [stations.length, "Charging stations"], [gates.length, "Gate lanes"],
   ];
+  if (blockInfo.XT) facts.push([blockInfo.XT.transfer_points.length, "Truck spots"], [exchangeCranes.size, "Exchange crane"]);
   document.getElementById("facts").innerHTML = facts.map(([n, t]) => `<div><dt>${t}</dt><dd>${n}</dd></div>`).join("");
   const legend = [["quay", "Quay lane"], ["lane", "Lane"], ["transfer_point", "Transfer point"], ["yard_slot", "Yard slot"],
     ["charging_station", "Charging"], ["gate_in", "Gate in"], ["gate_out", "Gate out"], ["exclusion", "Marsh (no build)"]];

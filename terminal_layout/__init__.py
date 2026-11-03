@@ -4,7 +4,7 @@ from .layout import Layout
 from .loader import load_layout
 from .model import Block, Cell, LayoutError, QuayCrane, YardCrane
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = [
     "load_layout",
     "Layout",

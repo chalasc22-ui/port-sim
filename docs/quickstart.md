@@ -30,21 +30,31 @@ stops = stopping_points(layout)             # compute once
 travel_time(layout, path, loaded=True, stops=stops)   # seconds, PortSim's motion model
 ```
 
-* Defaults are PortSim's: 6 m/s empty, 4 m/s loaded, 1.2 m/s². Change them in `terminal_layout/timing.py`.
-* Each quay transfer lane sits on the quay row. Send through-traffic down the bypass lane (y = 33) and
-  come up into a free lane from below: the fleet stress test (`tools/fleet_stress.py`) shows two thirds
-  of all waiting happens on the quay row otherwise.
+* Defaults are PortSim's: 6 m/s empty, 4 m/s loaded, 1.2 m/s², and service times of 60 s (quay crane),
+  75 s (yard crane), 30 s (gate) and 15 s (a container onto or off a vehicle). Change them in
+  `terminal_layout/timing.py`. `travel_time` stops at every junction, as PortSim does;
+  `junctions=False` gives the optimistic bound (no stops on the way).
+* Each quay transfer lane sits on the quay row, and in the fleet stress test (`tools/fleet_stress.py`)
+  that is where most waiting happens. `shortest_path` stays on the quay row when the bypass is no
+  shorter, so a vehicle passes one being served only once it plans around it. Two other lane rules are
+  there to try (`--quay-rule`; 24 AGVs, mean of three seeds): taking any free lane of the crane from
+  the bypass (`crane`) changes little (98 jobs an hour against 97); sending through-traffic down the
+  bypass and waiting there for a lane (`bypass`) halves the jobs (52 an hour), because a vehicle
+  waiting below a busy lane blocks the bypass, and one leaving a lane and one entering it want each
+  other's cell. Keep the bypass for driving past, not for waiting; the lane-change rule is yours.
+* The AGV spots of the exchange stack (block XA) are on row 1, which also carries AGVs heading west to
+  the inbound road, so an AGV being served there blocks the row behind it.
 * `examples/agv_stub.py` is a whole job using only `neighbors()`. Swap its `route()` for your router.
 
 ## Container stacking
 
 ```python
-layout.blocks                              # 27 yard blocks plus the exchange stack (XA, XT)
+layout.blocks                              # 27 yard blocks plus the exchange stack (XA, XT): skip those two
 layout.slots_in_block("C2")                # ground slots like "C2-03-02", by bay then row
 block = layout.blocks["C2"]
 block.max_tier, block.container_rows, block.capacity   # 5 tiers, 3 container rows per slot, containers when full
 layout.transfer_point_for("C2-03-02")      # where an AGV stands for that slot's bay
-layout.yard_cranes["RTG2"].blocks          # the blocks each yard crane serves
+layout.yard_cranes["RTG2"].blocks          # the blocks each yard crane serves (RTG1 to RTG6; XC1 is the exchange crane)
 ```
 
 `sim/modules.py` has a `Stacking` stand-in with `place(container)` and `retrieve(container)`; replace it.
@@ -56,7 +66,8 @@ layout.berths                              # B1 (QC1 to QC3) and B2 (QC4 to QC6)
 layout.quay_cranes["QC4"]                  # berth, x, transfer lanes, buffer_capacity (2)
 ```
 
-A quay crane's buffer holds 2 containers. When it is full, the crane waits for an AGV.
+A quay crane's buffer holds 2 containers. When it is full, the crane waits for an AGV; `sim/run_demo.py`
+shows QC2 doing that.
 
 ## Gate
 
@@ -66,9 +77,12 @@ layout.blocks["XT"].transfer_points          # the 4 truck spots at the exchange
 layout.blocks["XA"].transfer_points          # the 4 AGV spots on the other side of the same stack
 ```
 
-Trucks go gate in → a truck spot → gate out and never drive into the yard. The exchange crane XC1
-lifts containers between the truck side and the AGV side. This zone is a proposal: tell me if trucks
-should wait somewhere else or need more spots.
+Trucks go gate in → a truck spot → gate out and never drive into the yard: 20 to 24 moves in, 8 to 12
+out. They share the roads by the gate with AGVs: the column x = 80, the south road east of it, the gate-out
+column x = 88 and row 1. The
+exchange crane XC1 lifts containers between the truck side and the AGV side. The truck spots are one
+lane, so trucks pull forward and leave in order. This zone is a proposal: tell me if trucks should
+wait somewhere else or need more spots.
 
 ## Other files you may want
 

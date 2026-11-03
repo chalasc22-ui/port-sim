@@ -83,8 +83,13 @@ def test_travel_time_sums_the_graph_segments(dames):
 
 
 def test_driving_through_junctions_is_faster_than_stopping_at_each(dames):
-    from terminal_layout.timing import stopping_points, travel_time
+    from terminal_layout.timing import SPEED_LOADED_M_S, segment_time, stopping_points, travel_time
 
     path = dames.shortest_path(dames.quay_cranes["QC1"].transfer_points[1], dames.blocks["A2"].transfer_points[10])
     stops = stopping_points(dames)
     assert travel_time(dames, path, True, stops, junctions=False) < travel_time(dames, path, True, stops)
+    # the optimistic bound is one run from rest to rest, even past other transfer points on the way
+    one_run = segment_time((len(path) - 1) * dames.cell_size_m, SPEED_LOADED_M_S)
+    assert travel_time(dames, path, True, stops, junctions=False) == pytest.approx(one_run)
+    along_quay = dames.shortest_path((6, 34), (31, 34))          # past QC1's four transfer lanes
+    assert travel_time(dames, along_quay, junctions=False) == pytest.approx(segment_time(25 * 15, 6.0))

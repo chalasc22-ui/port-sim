@@ -54,3 +54,6 @@ def test_the_agv_stub_completes_both_jobs_using_only_the_api(dames):
     for legs in module.jobs(dames).values():
         moves, seconds, _ = module.drive(dames, legs)
         assert moves > 0 and seconds > 0
+    agv, truck = module.jobs(dames).values()
+    assert [leg[3] for leg in agv] == [False, True, False]     # loaded from the quay crane to the yard
+    assert [leg[3] for leg in truck] == [False, False, True]   # arrives empty, leaves with its container

@@ -3,7 +3,7 @@
 Run from the repo root:
 
     python examples/agv_stub.py           # summary of both jobs
-    python examples/agv_stub.py --trace   # every move with its clock time
+    python examples/agv_stub.py --trace   # also every move of each leg, cell by cell, before its stop
 
 This is a stand-in for the AGV module, written to show the contract, not to replace it. It finds its
 own routes by breadth-first search over `layout.neighbors()` (the one movement primitive), moves one
@@ -11,8 +11,9 @@ cell per step, waits at transfer points for the crane, and checks itself against
 `layout.shortest_path()`. Everything a real AGV module decides is a named constant or a plain
 function below, so the AGV owner can see exactly where their own code plugs in:
 
-* The handover times: placeholders until the AGV and crane owners set them. Driving times use
-  terminal_layout.timing, PortSim's model, so every module gets the same numbers.
+* Driving and handover times come from terminal_layout.timing: PortSim's motion model and its
+  Jacksonville service times, so every module gets the same numbers until the AGV, crane and
+  gate owners set their own.
 * route(): replace with your router (A*, time windows, reservations).
 * No other vehicles, no batteries, no breakdowns: those are yours.
 """
@@ -27,12 +28,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from terminal_layout import Layout, load_layout  # noqa: E402
-from terminal_layout.timing import SPEED_EMPTY_M_S, SPEED_LOADED_M_S, stopping_points, travel_time  # noqa: E402
-
-# Driving times come from terminal_layout.timing (PortSim's model: 6 m/s empty, 4 m/s loaded).
-QUAY_HANDOVER_S = 90     # placeholder: one quay crane move, vehicle waiting under the crane
-YARD_HANDOVER_S = 120    # placeholder: one RTG move, vehicle waiting in the truck lane
-GATE_S = 60              # placeholder: a truck's check-in or check-out at a gate lane
+from terminal_layout.timing import (  # noqa: E402
+    GATE_SERVICE_S, QUAY_SERVICE_S, SPEED_EMPTY_M_S, SPEED_LOADED_M_S, YARD_SERVICE_S, stopping_points, travel_time)
 
 
 def route(layout: Layout, start, goal) -> list[tuple[int, int]]:
@@ -56,12 +53,12 @@ def route(layout: Layout, start, goal) -> list[tuple[int, int]]:
 
 
 def drive(layout: Layout, legs, trace=False):
-    """legs = [(place name, cell, seconds spent there)]. Returns (moves, seconds, log lines)."""
+    """legs = [(place name, cell, seconds spent there, loaded on the way there)], starting where the
+    first leg is. Returns (moves, seconds, log lines)."""
     stops = stopping_points(layout)
     clock, moves, log = 0.0, 0, []
     here = legs[0][1]
-    loaded = False
-    for name, cell, dwell in legs:
+    for name, cell, dwell, loaded in legs:
         path = route(layout, here, cell)
         leg_s = travel_time(layout, path, loaded=loaded, stops=stops)
         assert path == layout.shortest_path(here, cell), "router disagrees with shortest_path"
@@ -71,10 +68,10 @@ def drive(layout: Layout, legs, trace=False):
             if trace:
                 log.append(f"  {a} -> {b}  {layout.cell(*b).type}")
         clock += leg_s
-        log.append(f"{clock:7.1f} s  at {name} {cell} after {len(path) - 1} moves, waits {dwell} s")
+        how = "loaded" if loaded else "empty"
+        log.append(f"{clock:7.1f} s  at {name} {cell} after {len(path) - 1} moves ({how}), waits {dwell:g} s")
         clock += dwell
         here = cell
-        loaded = not loaded                      # each stop is a pickup or a drop-off, in turn
     return moves, clock, log
 
 
@@ -84,11 +81,15 @@ def jobs(layout: Layout):
     g_in = layout.gate_cells("in")[0].pos
     g_out = layout.gate_cells("out")[0].pos
     truck_spot = layout.blocks["XT"].transfer_points[1]                # a truck spot at the exchange zone
-    return {
+    return {   # (place, cell, seconds there, loaded on the way there)
         "AGV: discharge QC1 -> block A2 -> back to QC1": [
-            ("QC1", qc1, QUAY_HANDOVER_S), ("block A2", bay.pos, YARD_HANDOVER_S), ("QC1", qc1, 0)],
+            ("QC1", qc1, QUAY_SERVICE_S, False),          # the quay crane sets a container on the AGV
+            ("block A2", bay.pos, YARD_SERVICE_S, True),  # the RTG lifts it off
+            ("QC1", qc1, 0, False)],
         "Truck: gate in -> pick up at the exchange zone -> gate out": [
-            ("gate in", g_in, GATE_S), ("exchange zone", truck_spot, YARD_HANDOVER_S), ("gate out", g_out, GATE_S)],
+            ("gate in", g_in, GATE_SERVICE_S, False),
+            ("exchange zone", truck_spot, YARD_SERVICE_S, False),   # arrives empty; XC1 loads it
+            ("gate out", g_out, GATE_SERVICE_S, True)],
     }
 
 
