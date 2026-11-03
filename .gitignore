@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# examples/demo.py writes these next to wherever you run it
+/layout.png
+/layout-closed.png
