@@ -5,9 +5,10 @@ Run from the repo root:
     python tools/bundle_viewer.py                    # viewer3d/dames-point-3d.html, a full page
     python tools/bundle_viewer.py out.html --fragment  # no <html>/<head>/<body> wrapper, for hosts that add their own
 
-viewer3d/index.html fetches layouts/dames-point.compiled.json and viewer3d/demo-routes.json at run
-time (serve the repo root with `python -m http.server`). The bundle embeds both as window.PORT_DATA,
-so it opens by double-click and can be shared as one file. Three.js still loads from jsDelivr.
+viewer3d/index.html fetches layouts/dames-point.compiled.json, viewer3d/demo-routes.json and
+viewer3d/demo-replay.json at run time (serve the repo root with `python -m http.server`). The bundle
+embeds all three as window.PORT_DATA, so it opens by double-click and can be shared as one file.
+Three.js still loads from jsDelivr.
 """
 
 import json
@@ -25,6 +26,7 @@ def main(argv: list[str]) -> int:
     data = {
         "layout": json.loads((ROOT / "layouts" / "dames-point.compiled.json").read_text(encoding="utf-8")),
         "routes": json.loads((ROOT / "viewer3d" / "demo-routes.json").read_text(encoding="utf-8")),
+        "sim": json.loads((ROOT / "viewer3d" / "demo-replay.json").read_text(encoding="utf-8")),
     }
     blob = json.dumps(data, separators=(",", ":")).replace("</", "<\\/")
     page = page.replace("<!-- BUNDLE:DATA -->", f"<script>window.PORT_DATA = {blob};</script>")

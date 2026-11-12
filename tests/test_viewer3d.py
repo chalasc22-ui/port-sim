@@ -40,10 +40,21 @@ def test_routes_file_is_what_the_generator_writes(tmp_path, monkeypatch):
     assert ROUTES.read_text() == before, "viewer3d/demo-routes.json is out of date: run tools/build_viewer_routes.py"
 
 
-def test_the_viewer_reads_only_the_compiled_file_and_the_routes():
+def test_the_viewer_reads_only_the_compiled_file_the_routes_and_the_replay():
     page = (ROOT / "viewer3d" / "index.html").read_text()
-    assert "../layouts/dames-point.compiled.json" in page and "demo-routes.json" in page
+    assert "../layouts/dames-point.compiled.json" in page and "demo-routes.json" in page and "demo-replay.json" in page
     assert "dames-point.json\"" not in page  # never the authored file
+    assert page.count("fetch(") == 3
+
+
+def test_the_bundle_is_the_page_with_its_data(tmp_path):
+    spec = importlib.util.spec_from_file_location("bundle_viewer", ROOT / "tools" / "bundle_viewer.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    out = tmp_path / "bundle.html"
+    assert module.main(["bundle_viewer.py", str(out)]) == 0
+    assert out.read_text(encoding="utf-8") == (ROOT / "viewer3d" / "dames-point-3d.html").read_text(encoding="utf-8"), \
+        "viewer3d/dames-point-3d.html is out of date: run tools/bundle_viewer.py"
 
 
 def test_the_agv_stub_completes_both_jobs_using_only_the_api(dames):
