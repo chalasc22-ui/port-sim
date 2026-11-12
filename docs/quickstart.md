@@ -91,7 +91,8 @@ wait somewhere else or need more spots.
 | `layouts/dames-point.compiled.json` | the map as plain JSON, if you are not using Python |
 | `layouts/dames-point.graph.json` | the roads as stopping points and segments, with lengths and times |
 | `layouts/variants/` | the same terminal with two-way roads, or with one aisle removed |
-| `viewer3d/dames-point-3d.html` | the 3D model; `window.portViewer.cellCenter(x, y)` places things on it |
+| `viewer3d/dames-point-3d.html` | the 3D model: open it by double-click. It plays `sim/run_demo.py`, plans routes, closes roads and has a guided tour for presenting |
+| `tools/build_viewer_replay.py` | writes the run the 3D model plays (`viewer3d/demo-replay.json`); its docstring is the file format, so your module's event log can be played the same way |
 | `CHANGELOG.md` | what changed in each version of the map |
 
 Questions or a change you need: message Christopher, or open an issue on the repo.

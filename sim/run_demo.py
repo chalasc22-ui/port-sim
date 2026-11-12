@@ -15,6 +15,9 @@ sim/modules.py, and each owner swaps their stand-in for the real thing. The even
 "scheduler" nobody owns yet; it is deliberately small so the group can decide who grows it. Vehicles
 do not block each other here (that is the AGV module's job); times are PortSim's
 (terminal_layout.timing).
+
+Terminal.trace records every drive and every lift with its times, so the run can be replayed:
+tools/build_viewer_replay.py turns it into the file the 3D viewer plays.
 """
 
 from __future__ import annotations
@@ -46,7 +49,11 @@ class Terminal:
         self.cap = {c: q.buffer_capacity for c, q in layout.quay_cranes.items()}
         self.crane_waiting = {}                                      # crane -> (since, containers still to move)
         self.truck_spot = dict.fromkeys(layout.blocks["XT"].transfer_points)   # spot -> truck id, or None
-        self.waiting_trucks = {}
+        self.waiting_trucks = {}                                     # container id -> (truck, spot) parked and waiting for it
+        self.in_exchange = set()                                     # container ids in the exchange stack, truck not here yet
+        self.trace = []                                              # what moved where and when, for a replay
+        for agv, cell in self.agvs.at.items():
+            self.rec("vehicle", id=agv, type="agv", at=cell, t=0.0)
 
     # ---- the event loop ------------------------------------------------------------------
     def at(self, t, what, *args):
@@ -54,6 +61,13 @@ class Terminal:
 
     def say(self, t, text):
         self.log.append((t, text))
+
+    def rec(self, kind, **fields):
+        """One trace record. Kinds: vehicle (id, type, at, t), vessel (id, berth, t), drive (who, t0, t1,
+        path, loaded, what) and lift (by, what, t0, t1, src, dst). A lift's `by` is a crane id, or None
+        for a handoff between a vehicle and the ground. Places are ("ship", crane), ("ground", cell),
+        ("vehicle", id), ("slot", slot id) and ("stack", block id)."""
+        self.trace.append({"kind": kind, **fields})
 
     def run(self):
         for vessel in self.ship.next_vessels():
@@ -68,6 +82,7 @@ class Terminal:
     # ---- ship side ------------------------------------------------------------------------
     def berth(self, t, vessel):
         self.say(t, f"{vessel.id} berths at {vessel.berth}")
+        self.rec("vessel", id=vessel.id, berth=vessel.berth, t=t)
         queue = {}
         for c in self.ship.discharge_list(vessel):
             queue.setdefault(c.crane, []).append(c)
@@ -89,6 +104,7 @@ class Terminal:
         done = t + QC_CYCLE_S
         self.say(done, f"{crane} sets {c.id} in its buffer ({len(self.buffer[crane]) + 1}/{self.cap[crane]})")
         self.buffer[crane].append(c)
+        self.rec("lift", by=crane, what=c.id, t0=t, t1=done, src=("ship", crane), dst=("ground", lane))
         self.at(done, self.move_by_agv, c, lane, "yard")
         self.at(done, self.crane_move, crane, items)
 
@@ -101,10 +117,14 @@ class Terminal:
         empty = self.agvs.route(self.agvs.at[agv], pickup)
         start = max(t, self.agvs.free_at[agv])
         arrive = start + self.agvs.drive_time(empty, loaded=False) + lift_s
+        self.rec("drive", who=agv, t0=start, t1=arrive - lift_s, path=empty, loaded=False, what=None)
         if then:                                                       # the crane was busy until now
             crane, rest = then
             self.say(arrive, f"{crane} sets {c.id} straight onto {agv} (no buffer)")
+            self.rec("lift", by=crane, what=c.id, t0=arrive - lift_s, t1=arrive, src=("ship", crane), dst=("vehicle", agv))
             self.at(arrive, self.crane_move, crane, rest)
+        else:
+            self.rec("lift", by=None, what=c.id, t0=arrive - lift_s, t1=arrive, src=("ground", pickup), dst=("vehicle", agv))
         if goal == "yard" and c.truck:                                # an import that leaves by truck
             goal = "exchange"
         if goal == "yard":
@@ -123,12 +143,17 @@ class Terminal:
         self.at(arrive, self.picked_up, c, agv)
         self.say(arrive, f"{agv} picks up {c.id}")
         self.say(done, f"{agv} delivers {c.id} to {where} ({len(empty) + len(loaded) - 2} moves)")
+        self.rec("drive", who=agv, t0=arrive, t1=done - HANDOFF_S, path=loaded, loaded=True, what=c.id)
+        self.rec("lift", by=None, what=c.id, t0=done - HANDOFF_S, t1=done, src=("vehicle", agv), dst=("ground", drop))
         if goal == "yard":
+            rtg = self.layout.blocks[self.layout.slot(c.slot).attrs["block"]].crane
             self.say(done + RTG_CYCLE_S, f"yard crane stacks {c.id} in {c.slot}")
+            self.rec("lift", by=rtg, what=c.id, t0=done, t1=done + RTG_CYCLE_S, src=("ground", drop), dst=("slot", c.slot))
         elif goal == "exchange":
-            self.at(done + XC_CYCLE_S, self.ready_for_truck, c)
+            self.at(done + XC_CYCLE_S, self.ready_for_truck, c, drop)
         else:
             self.say(done + QC_CYCLE_S, f"{c.crane} loads {c.id} onto the ship")
+            self.rec("lift", by=c.crane, what=c.id, t0=done, t1=done + QC_CYCLE_S, src=("ground", drop), dst=("ship", c.crane))
 
     def picked_up(self, t, c, agv):
         for crane, items in self.buffer.items():
@@ -142,6 +167,7 @@ class Terminal:
     # ---- truck side -----------------------------------------------------------------------
     def truck_arrives(self, t, truck):
         inside = t + self.gate.admit(truck)
+        self.rec("vehicle", id=truck.id, type="truck", at=self.layout.gate_cells("in")[0].pos, t=t)
         self.say(inside, f"{truck.id} clears the gate")
         self.at(inside, self.truck_to_spot, truck)
 
@@ -153,30 +179,44 @@ class Terminal:
         spot = free[0]
         self.truck_spot[spot] = truck.id
         path = self.layout.shortest_path(self.layout.gate_cells("in")[0].pos, spot)
-        self.at(t + self.agvs.drive_time(path, loaded=truck.drops is not None), self.truck_parked, truck, spot)
+        parked = t + self.agvs.drive_time(path, loaded=truck.drops is not None)
+        self.rec("drive", who=truck.id, t0=t, t1=parked, path=path, loaded=truck.drops is not None,
+                 what=truck.drops.id if truck.drops else None)
+        self.at(parked, self.truck_parked, truck, spot)
 
     def truck_parked(self, t, truck, spot):
         self.say(t, f"{truck.id} parks at truck spot {spot}")
         if truck.drops:
-            c = truck.drops
+            c, agv_side = truck.drops, self.layout.blocks["XA"].transfer_points[0]
             self.say(t + XC_CYCLE_S, f"XC1 lifts {c.id} off {truck.id} to the AGV side")
+            self.rec("lift", by="XC1", what=c.id, t0=t, t1=t + XC_CYCLE_S, src=("vehicle", truck.id), dst=("ground", agv_side))
             self.at(t + XC_CYCLE_S, self.truck_leaves, truck, spot)
-            self.at(t + XC_CYCLE_S, self.move_by_agv, c, self.layout.blocks["XA"].transfer_points[0], "ship")
-        if truck.picks:
-            self.waiting_trucks[truck.picks] = (truck, spot)              # here now: XC1 can load it
+            self.at(t + XC_CYCLE_S, self.move_by_agv, c, agv_side, "ship")
+        if truck.picks in self.in_exchange:                            # its container is in the stack: one more crane move
+            self.in_exchange.discard(truck.picks)
+            self.say(t + XC_CYCLE_S, f"XC1 loads {truck.picks} onto {truck.id}")
+            self.rec("lift", by="XC1", what=truck.picks, t0=t, t1=t + XC_CYCLE_S, src=("stack", "XT"), dst=("vehicle", truck.id))
+            self.at(t + XC_CYCLE_S, self.truck_leaves, truck, spot)
+        elif truck.picks:
+            self.waiting_trucks[truck.picks] = (truck, spot)              # here first: XC1 can load it straight away
 
-    def ready_for_truck(self, t, c):
-        if c.id not in self.waiting_trucks:                            # the truck is not here yet
-            self.at(t + 30, self.ready_for_truck, c)
-            return
-        truck, spot = self.waiting_trucks.pop(c.id)
-        self.say(t, f"XC1 loads {c.id} onto {truck.id}")
-        self.at(t, self.truck_leaves, truck, spot)
+    def ready_for_truck(self, t, c, agv_side):
+        """XC1 has taken c off the AGV side: onto its truck if that is parked, into the stack if not."""
+        if c.id in self.waiting_trucks:
+            truck, spot = self.waiting_trucks.pop(c.id)
+            self.say(t, f"XC1 loads {c.id} onto {truck.id}")
+            self.rec("lift", by="XC1", what=c.id, t0=t - XC_CYCLE_S, t1=t, src=("ground", agv_side), dst=("vehicle", truck.id))
+            self.at(t, self.truck_leaves, truck, spot)
+        else:
+            self.in_exchange.add(c.id)
+            self.say(t, f"XC1 sets {c.id} in the exchange stack")
+            self.rec("lift", by="XC1", what=c.id, t0=t - XC_CYCLE_S, t1=t, src=("ground", agv_side), dst=("stack", "XT"))
 
     def truck_leaves(self, t, truck, spot):
         self.truck_spot[spot] = None
         path = self.layout.shortest_path(spot, self.layout.gate_cells("out")[0].pos)
         out = t + self.agvs.drive_time(path, loaded=truck.picks is not None)
+        self.rec("drive", who=truck.id, t0=t, t1=out, path=path, loaded=truck.picks is not None, what=truck.picks)
         self.say(out, f"{truck.id} leaves through the gate")
 
 

@@ -6,6 +6,24 @@ Newest first. "Breaks" means code written against the previous version may need 
 
 * 3D viewer only, the map is unchanged: the river has moving ripples, sky reflections, a quay wall and a far
   bank; the marsh shows its ponds, reeds and shrubs; open ground is pavement; the legend lists water.
+* **The 3D viewer plays a simulation run.** `sim/run_demo.py` records every drive and lift
+  (`Terminal.trace`), `tools/build_viewer_replay.py` writes them to `viewer3d/demo-replay.json`, and the
+  viewer plays that file with play, pause, speed and a timeline to scrub: the ship comes alongside, quay
+  cranes lift containers into their buffers, AGVs carry them, yard cranes stack them, the exchange crane
+  loads a truck. Any module can be played the same way by writing the same file from its own event log;
+  the format is at the top of `tools/build_viewer_replay.py`.
+* Viewer tools: click two road cells for the shortest legal path with its moves, metres and travel times;
+  close road cells; compare the two-way variant; a layer for the stress test's waiting map; click a crane,
+  vehicle or container for what it is doing; follow or ride along with a vehicle; a guided tour with
+  captions for presenting.
+* Viewer look: quay cranes and RTGs with working trolleys and spreaders, vehicles that speed up, brake
+  and turn through corners, a time-of-day slider with night lighting, light masts, lane markings, a
+  fence, the gate canopy, 20 and 40 ft containers, and a feeder ship on the river.
+* The route tool repeats `neighbors`, `shortest_path` and `travel_time` in JavaScript, the only copy of a
+  layout rule outside the package. `tests/test_viewer_roads.py` runs it in Node against the Python on
+  480 trips (one-way, two-way, with closures) and is skipped where Node is not installed.
+* `sim/run_demo.py`: a truck that arrives after its container is in the exchange stack now waits one
+  more exchange-crane move to be loaded (it was loaded in no time). The default run is unchanged.
 
 ## v0.2.1, Nov 3 (schema 1.2, unchanged)
 

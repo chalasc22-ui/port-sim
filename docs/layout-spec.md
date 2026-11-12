@@ -348,13 +348,15 @@ Rule 12 is a warning because a scenario may close a lane on purpose to test reco
 
 ## 2D and 3D rendering
 
-Both views draw from the compiled JSON and nothing else. Neither view holds any terminal rule of its own; if the 3D page needs to know where a block is, it reads `grid` and `cells`.
+Both views draw from the compiled JSON and nothing else; if the 3D page needs to know where a block is, it reads `grid` and `cells`. The 2D view holds no terminal rule of its own. The 3D page holds one copy of three: its route tool repeats `neighbors`, `shortest_path` and `travel_time` in JavaScript so it can answer a click without a server, and `tests/test_viewer_roads.py` holds that copy to the Python.
 
 **2D (this module, Python).** `render_2d()` writes a PNG with matplotlib: one colored square per cell type, an arrow per lane exit, block ids and bay numbers, crane markers on the quay, gate labels, a bolt on each charging station, transfer points with a ground buffer hatched (all 451 at Dames Point), a dashed box and an `RTG` tag round each yard crane's reach, and closed cells hatched. `show_ids=True` prints coordinates in every cell for debugging. This is the verification view: if the picture is wrong, the file is wrong. It is also the figure for the one-page report. The traffic module can draw vehicles on top of the same axes by calling `render_2d(ax=...)`.
 
 **3D (web page, Three.js).** `viewer3d/index.html` is a single file that loads Three.js from a CDN and fetches `layouts/dames-point.compiled.json`. It draws a flat plane per cell colored by type, a box per yard slot stacked to `max_tier` in a translucent outline (occupied tiers get filled in later by the inventory feed), a simple gantry frame at each quay crane and yard crane, and a water plane. Orbit camera, zoom, and a top-down button. No build step: it runs from `python -m http.server` in the repo root.
 
 **What the poster demo needs from this module:** the static Dames Point map in 3D with an orbiting camera. AGVs moving and containers lifting are the traffic and demand modules' state drawn onto this map; the boundary is that the layout page renders the map and exposes a `window.portViewer.cellCenter(x, y)` helper, and the animation layer places moving objects with it.
+
+**Since Nov 12 the page also plays a run.** It reads `viewer3d/demo-replay.json`, the trace of `sim/run_demo.py` written by `tools/build_viewer_replay.py` (vehicles with their legs, containers with their lifts, the event log), and shows any moment of it: play, pause, speed, a timeline to scrub. The page knows no rule of the simulation; another module's run plays the same way once it is written in the same format. Around that it has a route planner, road closures, the two-way variant, the stress test's waiting map, details on click, follow and ride-along cameras, a time-of-day slider and a guided tour.
 
 **Decisions deferred until Dr. Wang's demo later this month:** whether to stay on Three.js or move to Unity, and how live state reaches the page (events file replay first, websocket later). The JSON format does not change either way, so those decisions do not block anything else.
 
