@@ -1,0 +1,1664 @@
+{
+ "reps": 30,
+ "experiments": [
+  {
+   "name": "yard alone",
+   "scale": "small",
+   "settings": [
+    {
+     "label": "shortest_stack",
+     "measures": {
+      "rehandles at 50%": {
+       "mean": 75.344,
+       "half": 1.296,
+       "n": 90
+      },
+      "rehandles at 75%": {
+       "mean": 125.7,
+       "half": 1.841,
+       "n": 90
+      },
+      "handling_min at 75%": {
+       "mean": 307.124,
+       "half": 2.301,
+       "n": 90
+      },
+      "rehandles at 90%": {
+       "mean": 151.189,
+       "half": 2.409,
+       "n": 90
+      }
+     }
+    },
+    {
+     "label": "departure_time",
+     "measures": {
+      "rehandles at 50%": {
+       "mean": 2.422,
+       "half": 0.477,
+       "n": 90
+      },
+      "rehandles at 75%": {
+       "mean": 29.744,
+       "half": 2.016,
+       "n": 90
+      },
+      "handling_min at 75%": {
+       "mean": 187.18,
+       "half": 2.521,
+       "n": 90
+      },
+      "rehandles at 90%": {
+       "mean": 63.978,
+       "half": 2.524,
+       "n": 90
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "stacking",
+   "scale": "small",
+   "measures": [
+    "rehandles",
+    "truck_turnaround_min",
+    "end_min"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "stacking = shortest_stack",
+     "measures": {
+      "rehandles": {
+       "mean": 3.4,
+       "half": 0.964,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 21.887,
+       "half": 2.081,
+       "n": 30
+      },
+      "end_min": {
+       "mean": 146.667,
+       "half": 4.501,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "stacking = departure_time",
+     "measures": {
+      "rehandles": {
+       "mean": 1.8,
+       "half": 0.523,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 27.667,
+       "half": 3.025,
+       "n": 30
+      },
+      "end_min": {
+       "mean": 148.963,
+       "half": 4.571,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "stacking = departure_time",
+     "against": "stacking = shortest_stack",
+     "measures": {
+      "rehandles": {
+       "mean": -1.6,
+       "half": 1.179,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 5.78,
+       "half": 1.981,
+       "n": 30
+      },
+      "end_min": {
+       "mean": 2.297,
+       "half": 2.337,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "ship",
+   "scale": "small",
+   "measures": [
+    "ship_wait_min",
+    "ship_wait_max_min",
+    "ship_turnaround_min"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "ship = fcfs",
+     "measures": {
+      "ship_wait_min": {
+       "mean": 61.31,
+       "half": 3.47,
+       "n": 30
+      },
+      "ship_wait_max_min": {
+       "mean": 95.617,
+       "half": 7.948,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 126.393,
+       "half": 6.055,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "ship = earliest_eligible",
+     "measures": {
+      "ship_wait_min": {
+       "mean": 37.963,
+       "half": 3.105,
+       "n": 30
+      },
+      "ship_wait_max_min": {
+       "mean": 86.393,
+       "half": 6.423,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 105.387,
+       "half": 5.466,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "ship = earliest_eligible",
+     "against": "ship = fcfs",
+     "measures": {
+      "ship_wait_min": {
+       "mean": -23.347,
+       "half": 3.921,
+       "n": 30
+      },
+      "ship_wait_max_min": {
+       "mean": -9.223,
+       "half": 6.282,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -21.007,
+       "half": 4.802,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "gate",
+   "scale": "small",
+   "measures": [
+    "truck_turnaround_min",
+    "truck_gate_wait_min",
+    "truck_inside_min"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "gate = fifo",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 44.823,
+       "half": 3.424,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 40.703,
+       "half": 3.385,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 4.107,
+       "half": 0.083,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "gate = appointment",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 27.667,
+       "half": 3.025,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 23.487,
+       "half": 3.03,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 4.177,
+       "half": 0.117,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "gate = appointment",
+     "against": "gate = fifo",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": -17.157,
+       "half": 2.911,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": -17.217,
+       "half": 2.897,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 0.07,
+       "half": 0.131,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "dispatch",
+   "scale": "small",
+   "measures": [
+    "agv_wait_for_agv_min",
+    "end_min",
+    "agv_km",
+    "agv_kwh"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "dispatch = nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 17.45,
+       "half": 1.213,
+       "n": 30
+      },
+      "end_min": {
+       "mean": 148.963,
+       "half": 4.571,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 170.603,
+       "half": 6.283,
+       "n": 30
+      },
+      "agv_kwh": {
+       "mean": 593.4,
+       "half": 21.432,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "dispatch = longest_idle",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 18.127,
+       "half": 1.233,
+       "n": 30
+      },
+      "end_min": {
+       "mean": 150.42,
+       "half": 4.657,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 174.6,
+       "half": 6.093,
+       "n": 30
+      },
+      "agv_kwh": {
+       "mean": 605.077,
+       "half": 20.916,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "dispatch = balanced",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 17.62,
+       "half": 1.206,
+       "n": 30
+      },
+      "end_min": {
+       "mean": 148.997,
+       "half": 4.589,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 171.61,
+       "half": 6.057,
+       "n": 30
+      },
+      "agv_kwh": {
+       "mean": 596.483,
+       "half": 20.743,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "dispatch = longest_idle",
+     "against": "dispatch = nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 0.677,
+       "half": 0.422,
+       "n": 30
+      },
+      "end_min": {
+       "mean": 1.457,
+       "half": 2.316,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 3.997,
+       "half": 2.472,
+       "n": 30
+      },
+      "agv_kwh": {
+       "mean": 11.677,
+       "half": 7.46,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "dispatch = balanced",
+     "against": "dispatch = nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 0.17,
+       "half": 0.098,
+       "n": 30
+      },
+      "end_min": {
+       "mean": 0.033,
+       "half": 1.032,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 1.007,
+       "half": 0.726,
+       "n": 30
+      },
+      "agv_kwh": {
+       "mean": 3.083,
+       "half": 2.223,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "fleet",
+   "scale": "small",
+   "measures": [
+    "end_min",
+    "moves_per_hour",
+    "ship_turnaround_min",
+    "truck_turnaround_min",
+    "quay_crane_wait_min"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "agvs = 6",
+     "measures": {
+      "end_min": {
+       "mean": 233.24,
+       "half": 8.045,
+       "n": 30
+      },
+      "moves_per_hour": {
+       "mean": 13.553,
+       "half": 0.172,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 127.853,
+       "half": 9.074,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 84.443,
+       "half": 6.276,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 148.74,
+       "half": 20.828,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 8",
+     "measures": {
+      "end_min": {
+       "mean": 179.947,
+       "half": 5.801,
+       "n": 30
+      },
+      "moves_per_hour": {
+       "mean": 17.56,
+       "half": 0.267,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 90.137,
+       "half": 6.686,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 48.287,
+       "half": 4.158,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 90.82,
+       "half": 16.648,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 10",
+     "measures": {
+      "end_min": {
+       "mean": 148.963,
+       "half": 4.571,
+       "n": 30
+      },
+      "moves_per_hour": {
+       "mean": 21.197,
+       "half": 0.258,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 71.987,
+       "half": 5.33,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 27.667,
+       "half": 3.025,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 56.667,
+       "half": 14.091,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 12",
+     "measures": {
+      "end_min": {
+       "mean": 134.797,
+       "half": 4.351,
+       "n": 30
+      },
+      "moves_per_hour": {
+       "mean": 23.48,
+       "half": 0.616,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 60.057,
+       "half": 4.316,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 18.337,
+       "half": 1.834,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 30.263,
+       "half": 10.374,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "agvs = 8",
+     "against": "agvs = 6",
+     "measures": {
+      "end_min": {
+       "mean": -53.293,
+       "half": 4.019,
+       "n": 30
+      },
+      "moves_per_hour": {
+       "mean": 4.007,
+       "half": 0.271,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -37.717,
+       "half": 5.026,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -36.157,
+       "half": 3.246,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -57.92,
+       "half": 9.962,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 10",
+     "against": "agvs = 6",
+     "measures": {
+      "end_min": {
+       "mean": -84.277,
+       "half": 4.215,
+       "n": 30
+      },
+      "moves_per_hour": {
+       "mean": 7.643,
+       "half": 0.244,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -55.867,
+       "half": 5.996,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -56.777,
+       "half": 5.379,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -92.073,
+       "half": 14.866,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 12",
+     "against": "agvs = 6",
+     "measures": {
+      "end_min": {
+       "mean": -98.443,
+       "half": 6.055,
+       "n": 30
+      },
+      "moves_per_hour": {
+       "mean": 9.927,
+       "half": 0.587,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -67.797,
+       "half": 6.763,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -66.107,
+       "half": 5.34,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -118.477,
+       "half": 15.699,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "stacking",
+   "scale": "shift",
+   "measures": [
+    "rehandles",
+    "quay_moves_per_crane_hour",
+    "ship_turnaround_min",
+    "truck_turnaround_min"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "stacking = shortest_stack",
+     "measures": {
+      "rehandles": {
+       "mean": 400.233,
+       "half": 12.076,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 12.967,
+       "half": 0.209,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 519.723,
+       "half": 25.152,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 14.703,
+       "half": 0.824,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "stacking = departure_time",
+     "measures": {
+      "rehandles": {
+       "mean": 21.4,
+       "half": 3.552,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 15.713,
+       "half": 0.282,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 442.297,
+       "half": 26.811,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 13.37,
+       "half": 0.545,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "stacking = departure_time",
+     "against": "stacking = shortest_stack",
+     "measures": {
+      "rehandles": {
+       "mean": -378.833,
+       "half": 10.732,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 2.747,
+       "half": 0.153,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -77.427,
+       "half": 10.565,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -1.333,
+       "half": 0.475,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "ship",
+   "scale": "shift",
+   "measures": [
+    "ship_wait_min",
+    "ship_wait_max_min",
+    "ship_turnaround_min"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "ship = fcfs",
+     "measures": {
+      "ship_wait_min": {
+       "mean": 148.753,
+       "half": 62.013,
+       "n": 30
+      },
+      "ship_wait_max_min": {
+       "mean": 271.883,
+       "half": 70.912,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 484.07,
+       "half": 60.122,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "ship = earliest_eligible",
+     "measures": {
+      "ship_wait_min": {
+       "mean": 106.953,
+       "half": 29.825,
+       "n": 30
+      },
+      "ship_wait_max_min": {
+       "mean": 299.787,
+       "half": 91.631,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 442.297,
+       "half": 26.811,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "ship = earliest_eligible",
+     "against": "ship = fcfs",
+     "measures": {
+      "ship_wait_min": {
+       "mean": -41.8,
+       "half": 39.474,
+       "n": 30
+      },
+      "ship_wait_max_min": {
+       "mean": 27.903,
+       "half": 48.255,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -41.773,
+       "half": 40.872,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "gate",
+   "scale": "shift",
+   "measures": [
+    "truck_turnaround_min",
+    "truck_gate_wait_min",
+    "truck_inside_min",
+    "imports_sent_back"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "gate = fifo",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 16.217,
+       "half": 1.231,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 10.403,
+       "half": 1.102,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 5.81,
+       "half": 0.166,
+       "n": 30
+      },
+      "imports_sent_back": {
+       "mean": 0,
+       "half": 0.0,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "gate = appointment",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 13.37,
+       "half": 0.545,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 7.78,
+       "half": 0.525,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 5.58,
+       "half": 0.118,
+       "n": 30
+      },
+      "imports_sent_back": {
+       "mean": 5.1,
+       "half": 0.834,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "gate = appointment",
+     "against": "gate = fifo",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": -2.847,
+       "half": 1.228,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": -2.623,
+       "half": 1.088,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": -0.23,
+       "half": 0.211,
+       "n": 30
+      },
+      "imports_sent_back": {
+       "mean": 5.1,
+       "half": 0.834,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "dispatch",
+   "scale": "shift",
+   "measures": [
+    "agv_wait_for_agv_min",
+    "quay_moves_per_crane_hour",
+    "ship_turnaround_min",
+    "agv_km"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "dispatch = nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 5.707,
+       "half": 0.199,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 15.713,
+       "half": 0.282,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 442.297,
+       "half": 26.811,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 2033.087,
+       "half": 34.431,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "dispatch = longest_idle",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 6.297,
+       "half": 0.189,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 15.33,
+       "half": 0.257,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 449.853,
+       "half": 26.92,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 2224.17,
+       "half": 34.385,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "dispatch = balanced",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 5.803,
+       "half": 0.177,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 15.55,
+       "half": 0.278,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 446.283,
+       "half": 26.968,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 2058.38,
+       "half": 34.752,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "dispatch = longest_idle",
+     "against": "dispatch = nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 0.59,
+       "half": 0.08,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": -0.383,
+       "half": 0.119,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 7.557,
+       "half": 2.783,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 191.083,
+       "half": 13.032,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "dispatch = balanced",
+     "against": "dispatch = nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 0.097,
+       "half": 0.105,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": -0.163,
+       "half": 0.154,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 3.987,
+       "half": 4.126,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 25.293,
+       "half": 8.511,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "fleet",
+   "scale": "shift",
+   "measures": [
+    "quay_moves_per_crane_hour",
+    "ship_turnaround_min",
+    "truck_turnaround_min",
+    "quay_crane_wait_min",
+    "agv_blocked_min"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "agvs = 18",
+     "measures": {
+      "quay_moves_per_crane_hour": {
+       "mean": 13.4,
+       "half": 0.347,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 511.93,
+       "half": 22.847,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 12.967,
+       "half": 0.597,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 656.88,
+       "half": 66.888,
+       "n": 30
+      },
+      "agv_blocked_min": {
+       "mean": 1062.713,
+       "half": 53.007,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 24",
+     "measures": {
+      "quay_moves_per_crane_hour": {
+       "mean": 14.987,
+       "half": 0.302,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 461.737,
+       "half": 25.734,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 13.003,
+       "half": 0.552,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 390.92,
+       "half": 42.026,
+       "n": 30
+      },
+      "agv_blocked_min": {
+       "mean": 1706.27,
+       "half": 128.076,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 30",
+     "measures": {
+      "quay_moves_per_crane_hour": {
+       "mean": 15.713,
+       "half": 0.282,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 442.297,
+       "half": 26.811,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 13.37,
+       "half": 0.545,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 282.653,
+       "half": 33.141,
+       "n": 30
+      },
+      "agv_blocked_min": {
+       "mean": 2488.7,
+       "half": 200.394,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 36",
+     "measures": {
+      "quay_moves_per_crane_hour": {
+       "mean": 16.017,
+       "half": 0.267,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 434.48,
+       "half": 27.865,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 13.613,
+       "half": 0.672,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 214.56,
+       "half": 29.197,
+       "n": 30
+      },
+      "agv_blocked_min": {
+       "mean": 3325.203,
+       "half": 256.262,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "agvs = 24",
+     "against": "agvs = 18",
+     "measures": {
+      "quay_moves_per_crane_hour": {
+       "mean": 1.587,
+       "half": 0.118,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -50.193,
+       "half": 6.337,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 0.037,
+       "half": 0.23,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -265.96,
+       "half": 29.905,
+       "n": 30
+      },
+      "agv_blocked_min": {
+       "mean": 643.557,
+       "half": 93.841,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 30",
+     "against": "agvs = 18",
+     "measures": {
+      "quay_moves_per_crane_hour": {
+       "mean": 2.313,
+       "half": 0.136,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -69.633,
+       "half": 8.442,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 0.403,
+       "half": 0.27,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -374.227,
+       "half": 40.284,
+       "n": 30
+      },
+      "agv_blocked_min": {
+       "mean": 1425.987,
+       "half": 166.941,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "agvs = 36",
+     "against": "agvs = 18",
+     "measures": {
+      "quay_moves_per_crane_hour": {
+       "mean": 2.617,
+       "half": 0.175,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -77.45,
+       "half": 9.583,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 0.647,
+       "half": 0.295,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -442.32,
+       "half": 42.42,
+       "n": 30
+      },
+      "agv_blocked_min": {
+       "mean": 2262.49,
+       "half": 222.434,
+       "n": 30
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "trucks",
+   "scale": "shift",
+   "measures": [
+    "truck_turnaround_min",
+    "truck_gate_wait_min",
+    "truck_inside_min",
+    "trucks_served",
+    "ship_turnaround_min"
+   ],
+   "unfinished": 0,
+   "problems": 0,
+   "settings": [
+    {
+     "label": "trucks_per_hour = 6",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 11.057,
+       "half": 0.646,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 5.917,
+       "half": 0.631,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 5.157,
+       "half": 0.092,
+       "n": 30
+      },
+      "trucks_served": {
+       "mean": 42.167,
+       "half": 0.708,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 437.23,
+       "half": 28.382,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "trucks_per_hour = 10",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 13.37,
+       "half": 0.545,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 7.78,
+       "half": 0.525,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 5.58,
+       "half": 0.118,
+       "n": 30
+      },
+      "trucks_served": {
+       "mean": 69.067,
+       "half": 1.201,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 442.297,
+       "half": 26.811,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "trucks_per_hour = 14",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 17.133,
+       "half": 1.135,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 10.997,
+       "half": 1.116,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 6.15,
+       "half": 0.134,
+       "n": 30
+      },
+      "trucks_served": {
+       "mean": 96.9,
+       "half": 1.106,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 451.543,
+       "half": 26.453,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "trucks_per_hour = 18",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 24.53,
+       "half": 2.335,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 17.8,
+       "half": 2.354,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 6.72,
+       "half": 0.128,
+       "n": 30
+      },
+      "trucks_served": {
+       "mean": 124.8,
+       "half": 1.747,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 451.07,
+       "half": 25.052,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "differences": [
+    {
+     "label": "trucks_per_hour = 10",
+     "against": "trucks_per_hour = 6",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 2.313,
+       "half": 0.674,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 1.863,
+       "half": 0.675,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 0.423,
+       "half": 0.135,
+       "n": 30
+      },
+      "trucks_served": {
+       "mean": 26.9,
+       "half": 1.395,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 5.067,
+       "half": 4.672,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "trucks_per_hour = 14",
+     "against": "trucks_per_hour = 6",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 6.077,
+       "half": 1.21,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 5.08,
+       "half": 1.155,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 0.993,
+       "half": 0.164,
+       "n": 30
+      },
+      "trucks_served": {
+       "mean": 54.733,
+       "half": 1.393,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 14.313,
+       "half": 5.437,
+       "n": 30
+      }
+     }
+    },
+    {
+     "label": "trucks_per_hour = 18",
+     "against": "trucks_per_hour = 6",
+     "measures": {
+      "truck_turnaround_min": {
+       "mean": 13.473,
+       "half": 2.15,
+       "n": 30
+      },
+      "truck_gate_wait_min": {
+       "mean": 11.883,
+       "half": 2.17,
+       "n": 30
+      },
+      "truck_inside_min": {
+       "mean": 1.563,
+       "half": 0.163,
+       "n": 30
+      },
+      "trucks_served": {
+       "mean": 82.633,
+       "half": 1.955,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 13.84,
+       "half": 11.416,
+       "n": 30
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "baseline": {
+  "setting": {
+   "agvs": 30,
+   "trucks_per_hour": 10,
+   "ship": "earliest_eligible",
+   "stacking": "departure_time",
+   "dispatch": "nearest_feasible",
+   "gate": "appointment"
+  },
+  "measures": {
+   "quay_moves": {
+    "mean": 762,
+    "half": 13.678,
+    "n": 30
+   },
+   "quay_moves_per_crane_hour": {
+    "mean": 15.713,
+    "half": 0.282,
+    "n": 30
+   },
+   "ship_turnaround_min": {
+    "mean": 442.297,
+    "half": 26.811,
+    "n": 30
+   },
+   "ship_wait_min": {
+    "mean": 106.953,
+    "half": 29.825,
+    "n": 30
+   },
+   "truck_turnaround_min": {
+    "mean": 13.37,
+    "half": 0.545,
+    "n": 30
+   },
+   "truck_gate_wait_min": {
+    "mean": 7.78,
+    "half": 0.525,
+    "n": 30
+   },
+   "truck_inside_min": {
+    "mean": 5.58,
+    "half": 0.118,
+    "n": 30
+   },
+   "trucks": {
+    "mean": 80,
+    "half": 0.0,
+    "n": 30
+   },
+   "trucks_served": {
+    "mean": 69.067,
+    "half": 1.201,
+    "n": 30
+   },
+   "truck_no_shows": {
+    "mean": 9.033,
+    "half": 1.103,
+    "n": 30
+   },
+   "imports_sent_back": {
+    "mean": 5.1,
+    "half": 0.834,
+    "n": 30
+   },
+   "rehandles": {
+    "mean": 21.4,
+    "half": 3.552,
+    "n": 30
+   },
+   "yard_lifts_out": {
+    "mean": 319.167,
+    "half": 10.171,
+    "n": 30
+   },
+   "yard_occupancy": {
+    "mean": 0.62,
+    "half": 0.006,
+    "n": 30
+   },
+   "agv_speed_m_s": {
+    "mean": 4.443,
+    "half": 0.013,
+    "n": 30
+   },
+   "agv_kwh_per_operating_hour": {
+    "mean": 14.513,
+    "half": 0.269,
+    "n": 30
+   },
+   "agv_parked_share": {
+    "mean": 0.468,
+    "half": 0.028,
+    "n": 30
+   },
+   "agv_wait_at_yard_share": {
+    "mean": 0.197,
+    "half": 0.003,
+    "n": 30
+   },
+   "yard_crane_travel_share": {
+    "mean": 0.271,
+    "half": 0.003,
+    "n": 30
+   },
+   "agv_job_min": {
+    "mean": 16.887,
+    "half": 0.255,
+    "n": 30
+   },
+   "charging_stays": {
+    "mean": 23.067,
+    "half": 1.921,
+    "n": 30
+   },
+   "disruptions": {
+    "mean": 1.967,
+    "half": 0.454,
+    "n": 30
+   },
+   "stalls": {
+    "mean": 26.167,
+    "half": 5.282,
+    "n": 30
+   },
+   "end_min": {
+    "mean": 922.98,
+    "half": 67.317,
+    "n": 30
+   },
+   "containers": {
+    "mean": 2198.6,
+    "half": 13.642,
+    "n": 30
+   }
+  },
+  "finished": 30,
+  "problems": 0
+ }
+}

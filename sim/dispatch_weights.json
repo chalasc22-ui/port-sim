@@ -1,0 +1,90 @@
+{
+ "made_by": "python tools/learned_dispatch.py train --cost jobs",
+ "made": "2026-11-21",
+ "method": "Q-learning in its batch form with a linear Q-function and n-step targets, fitted on the choices made by lot: see the top of tools/learned_dispatch.py",
+ "cost": "jobs",
+ "cost_in_words": "the minutes jobs wait for an AGV: at every reading, one for each job with no AGV at its pickup yet",
+ "expects": "waiting",
+ "weights": {
+  "drive": 2.4744,
+  "drive_served_1": -1.8101,
+  "drive_served_2": -1.5009,
+  "drive_load": -0.8174,
+  "drive_truck": -0.2856,
+  "waited": 2.0979,
+  "waited_long": -2.6076,
+  "discharge_1": 1.3658,
+  "discharge_2": 0.7576,
+  "load_0": 1.9592,
+  "load_1": -2.0018,
+  "load_2": -0.3841,
+  "deliver": 3.3488
+ },
+ "standard_errors": {
+  "drive": 0.8474,
+  "drive_served_1": 0.9011,
+  "drive_served_2": 0.8595,
+  "drive_load": 0.8743,
+  "drive_truck": 1.1597,
+  "waited": 0.9577,
+  "waited_long": 1.7586,
+  "discharge_1": 0.9801,
+  "discharge_2": 0.9547,
+  "load_0": 1.3488,
+  "load_1": 1.3444,
+  "load_2": 1.0947,
+  "deliver": 1.979
+ },
+ "level_weights": {
+  "level": 27.7172,
+  "jobs_waiting": 45.2101,
+  "agvs_coming": 20.5052,
+  "agvs_free": -9.0177,
+  "cost_now": 4.7912,
+  "cranes_at_work": 10.2689,
+  "average_drive": 2.5696,
+  "average_drive_served_1": -5.367,
+  "average_drive_served_2": 2.303,
+  "average_drive_load": -1.1354,
+  "average_drive_truck": -4.7754,
+  "average_waited": 22.6328,
+  "average_waited_long": -15.9521,
+  "average_discharge_1": 6.2173,
+  "average_discharge_2": -4.2038,
+  "average_load_0": -7.6809,
+  "average_load_1": -6.8639,
+  "average_load_2": -8.7519,
+  "average_deliver": -3.7921
+ },
+ "training": {
+  "rounds": 8,
+  "shifts": 120,
+  "seeds": [
+   1001,
+   1120
+  ],
+  "share_by_lot": [
+   1.0,
+   0.5,
+   0.4,
+   0.3,
+   0.3,
+   0.2,
+   0.2,
+   0.2
+  ],
+  "choices": 100578,
+  "between_pairs": 87696,
+  "between_jobs": 26765,
+  "by_lot": 30745,
+  "explained": 0.9032,
+  "tick_s": 10.0,
+  "half_life_s": 300.0,
+  "window_s": 900.0,
+  "ridge": 0.0001,
+  "development_seeds": [
+   5001,
+   5008
+  ]
+ }
+}

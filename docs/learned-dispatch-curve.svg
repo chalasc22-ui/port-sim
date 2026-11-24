@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 976 308" width="976" height="308" role="img" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<title>The learning curve of the dispatch rule</title>
+<desc>Three line charts over the number of training shifts: how long a job waits for its AGV, how far the AGVs drive, and quay moves per crane-hour, each measured on the development shifts, with the level of two hand-written rules drawn across.</desc>
+<rect width="976" height="308" fill="#ffffff"/>
+<text x="16.0" y="24.0" font-size="14" fill="#1c2422" text-anchor="start" font-weight="600">What the rule had learned after each round of training</text>
+<text x="16.0" y="43.0" font-size="12" fill="#55615d" text-anchor="start" font-weight="400">Measured after every round on eight development shifts it never trained on. Training: 8 shifts in the first round, 16 in each round after.</text>
+<line x1="16" x2="44" y1="66" y2="66" stroke="#2a78d6" stroke-width="2.25" stroke-linecap="round"/><circle cx="30" cy="66" r="4" fill="#2a78d6" stroke="#ffffff" stroke-width="2"/>
+<text x="52.0" y="70.0" font-size="12" fill="#1c2422" text-anchor="start" font-weight="400">The learned rule</text>
+<line x1="179.8" x2="207.8" y1="66" y2="66" stroke="#55615d" stroke-width="1.5" stroke-dasharray="6 4" stroke-linecap="round"/>
+<text x="215.8" y="70.0" font-size="12" fill="#1c2422" text-anchor="start" font-weight="400">Nearest with charge, as planned</text>
+<line x1="438.9" x2="466.9" y1="66" y2="66" stroke="#55615d" stroke-width="1.5" stroke-dasharray="1.5 4" stroke-linecap="round"/>
+<text x="474.9" y="70.0" font-size="12" fill="#1c2422" text-anchor="start" font-weight="400">Nearest job first, written by hand</text>
+<text x="68.0" y="92.0" font-size="12" fill="#1c2422" text-anchor="start" font-weight="600">A job waits for its AGV (min)</text>
+<text x="68.0" y="107.0" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">lower is better</text>
+<line x1="68.0" x2="280.0" y1="260.0" y2="260.0" stroke="#e3e7e3"/>
+<text x="60.0" y="264.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">5.4</text>
+<line x1="68.0" x2="280.0" y1="224.0" y2="224.0" stroke="#e3e7e3"/>
+<text x="60.0" y="228.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">5.6</text>
+<line x1="68.0" x2="280.0" y1="188.0" y2="188.0" stroke="#e3e7e3"/>
+<text x="60.0" y="192.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">5.8</text>
+<line x1="68.0" x2="280.0" y1="152.0" y2="152.0" stroke="#e3e7e3"/>
+<text x="60.0" y="156.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">6.0</text>
+<line x1="68.0" x2="280.0" y1="116.0" y2="116.0" stroke="#e3e7e3"/>
+<text x="60.0" y="120.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">6.2</text>
+<text x="68.0" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">0</text>
+<text x="138.7" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">40</text>
+<text x="209.3" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">80</text>
+<text x="280.0" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">120</text>
+<text x="174.0" y="294.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">training shifts so far</text>
+<line x1="68.0" x2="280.0" y1="228.5" y2="228.5" stroke="#55615d" stroke-width="1.5" stroke-dasharray="6 4" stroke-linecap="round"><title>Nearest with charge: 5.58</title></line>
+<line x1="68.0" x2="280.0" y1="257.7" y2="257.7" stroke="#55615d" stroke-width="1.5" stroke-dasharray="1.5 4" stroke-linecap="round"><title>Nearest job first: 5.41</title></line>
+<polyline fill="none" stroke="#2a78d6" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" points="68.0,122.8 82.1,239.7 110.4,246.5 138.7,246.5 166.9,253.2 195.2,251.0 223.5,253.2 251.7,242.0 280.0,242.0"/>
+<circle cx="68.0" cy="122.8" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 0 training shifts: 6.16</title></circle>
+<circle cx="82.1" cy="239.7" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 8 training shifts: 5.51</title></circle>
+<circle cx="110.4" cy="246.5" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 24 training shifts: 5.47</title></circle>
+<circle cx="138.7" cy="246.5" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 40 training shifts: 5.47</title></circle>
+<circle cx="166.9" cy="253.2" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 56 training shifts: 5.44</title></circle>
+<circle cx="195.2" cy="251.0" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 72 training shifts: 5.45</title></circle>
+<circle cx="223.5" cy="253.2" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 88 training shifts: 5.44</title></circle>
+<circle cx="251.7" cy="242.0" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 104 training shifts: 5.50</title></circle>
+<circle cx="280.0" cy="242.0" r="5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 120 training shifts: 5.50</title></circle>
+<text x="290.0" y="246.0" font-size="12" fill="#1c2422" text-anchor="start" font-weight="600">5.50</text>
+<text x="290.0" y="232.5" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">5.58</text>
+<text x="290.0" y="261.7" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">5.41</text>
+<text x="388.0" y="92.0" font-size="12" fill="#1c2422" text-anchor="start" font-weight="600">AGVs drive (km)</text>
+<text x="388.0" y="107.0" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">lower is better</text>
+<line x1="388.0" x2="600.0" y1="260.0" y2="260.0" stroke="#e3e7e3"/>
+<text x="380.0" y="264.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">1,900</text>
+<line x1="388.0" x2="600.0" y1="224.0" y2="224.0" stroke="#e3e7e3"/>
+<text x="380.0" y="228.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">2,000</text>
+<line x1="388.0" x2="600.0" y1="188.0" y2="188.0" stroke="#e3e7e3"/>
+<text x="380.0" y="192.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">2,100</text>
+<line x1="388.0" x2="600.0" y1="152.0" y2="152.0" stroke="#e3e7e3"/>
+<text x="380.0" y="156.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">2,200</text>
+<line x1="388.0" x2="600.0" y1="116.0" y2="116.0" stroke="#e3e7e3"/>
+<text x="380.0" y="120.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">2,300</text>
+<text x="388.0" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">0</text>
+<text x="458.7" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">40</text>
+<text x="529.3" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">80</text>
+<text x="600.0" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">120</text>
+<text x="494.0" y="294.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">training shifts so far</text>
+<line x1="388.0" x2="600.0" y1="207.0" y2="207.0" stroke="#55615d" stroke-width="1.5" stroke-dasharray="6 4" stroke-linecap="round"><title>Nearest with charge: 2,047</title></line>
+<line x1="388.0" x2="600.0" y1="242.0" y2="242.0" stroke="#55615d" stroke-width="1.5" stroke-dasharray="1.5 4" stroke-linecap="round"><title>Nearest job first: 1,950</title></line>
+<polyline fill="none" stroke="#2a78d6" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" points="388.0,150.4 402.1,217.9 430.4,219.8 458.7,227.8 486.9,226.0 515.2,228.3 543.5,227.6 571.7,221.6 600.0,225.0"/>
+<circle cx="388.0" cy="150.4" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 0 training shifts: 2,205</title></circle>
+<circle cx="402.1" cy="217.9" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 8 training shifts: 2,017</title></circle>
+<circle cx="430.4" cy="219.8" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 24 training shifts: 2,012</title></circle>
+<circle cx="458.7" cy="227.8" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 40 training shifts: 1,989</title></circle>
+<circle cx="486.9" cy="226.0" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 56 training shifts: 1,994</title></circle>
+<circle cx="515.2" cy="228.3" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 72 training shifts: 1,988</title></circle>
+<circle cx="543.5" cy="227.6" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 88 training shifts: 1,990</title></circle>
+<circle cx="571.7" cy="221.6" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 104 training shifts: 2,007</title></circle>
+<circle cx="600.0" cy="225.0" r="5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 120 training shifts: 1,997</title></circle>
+<text x="610.0" y="229.0" font-size="12" fill="#1c2422" text-anchor="start" font-weight="600">1,997</text>
+<text x="610.0" y="211.0" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">2,047</text>
+<text x="610.0" y="246.0" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">1,950</text>
+<text x="708.0" y="92.0" font-size="12" fill="#1c2422" text-anchor="start" font-weight="600">Quay moves per crane-hour</text>
+<text x="708.0" y="107.0" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">higher is better</text>
+<line x1="708.0" x2="920.0" y1="260.0" y2="260.0" stroke="#e3e7e3"/>
+<text x="700.0" y="264.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">15.4</text>
+<line x1="708.0" x2="920.0" y1="224.0" y2="224.0" stroke="#e3e7e3"/>
+<text x="700.0" y="228.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">15.6</text>
+<line x1="708.0" x2="920.0" y1="188.0" y2="188.0" stroke="#e3e7e3"/>
+<text x="700.0" y="192.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">15.8</text>
+<line x1="708.0" x2="920.0" y1="152.0" y2="152.0" stroke="#e3e7e3"/>
+<text x="700.0" y="156.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">16.0</text>
+<line x1="708.0" x2="920.0" y1="116.0" y2="116.0" stroke="#e3e7e3"/>
+<text x="700.0" y="120.0" font-size="11" fill="#55615d" text-anchor="end" font-weight="400">16.2</text>
+<text x="708.0" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">0</text>
+<text x="778.7" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">40</text>
+<text x="849.3" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">80</text>
+<text x="920.0" y="276.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">120</text>
+<text x="814.0" y="294.0" font-size="11" fill="#55615d" text-anchor="middle" font-weight="400">training shifts so far</text>
+<line x1="708.0" x2="920.0" y1="181.2" y2="181.2" stroke="#55615d" stroke-width="1.5" stroke-dasharray="6 4" stroke-linecap="round"><title>Nearest with charge: 15.84</title></line>
+<line x1="708.0" x2="920.0" y1="152.0" y2="152.0" stroke="#55615d" stroke-width="1.5" stroke-dasharray="1.5 4" stroke-linecap="round"><title>Nearest job first: 16.00</title></line>
+<polyline fill="none" stroke="#2a78d6" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" points="708.0,239.8 722.1,185.8 750.4,167.7 778.7,161.0 806.9,165.5 835.2,145.2 863.5,156.5 891.7,172.3 920.0,181.2"/>
+<circle cx="708.0" cy="239.8" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 0 training shifts: 15.51</title></circle>
+<circle cx="722.1" cy="185.8" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 8 training shifts: 15.81</title></circle>
+<circle cx="750.4" cy="167.7" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 24 training shifts: 15.91</title></circle>
+<circle cx="778.7" cy="161.0" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 40 training shifts: 15.95</title></circle>
+<circle cx="806.9" cy="165.5" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 56 training shifts: 15.93</title></circle>
+<circle cx="835.2" cy="145.2" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 72 training shifts: 16.04</title></circle>
+<circle cx="863.5" cy="156.5" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 88 training shifts: 15.97</title></circle>
+<circle cx="891.7" cy="172.3" r="3.5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 104 training shifts: 15.89</title></circle>
+<circle cx="920.0" cy="181.2" r="5" fill="#2a78d6" stroke="#ffffff" stroke-width="2"><title>After 120 training shifts: 15.84</title></circle>
+<text x="930.0" y="178.7" font-size="12" fill="#1c2422" text-anchor="start" font-weight="600">15.84</text>
+<text x="930.0" y="191.7" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">15.84</text>
+<text x="930.0" y="156.0" font-size="11" fill="#55615d" text-anchor="start" font-weight="400">16.00</text>
+</svg>
