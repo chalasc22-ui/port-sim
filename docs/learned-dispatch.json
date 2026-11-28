@@ -1,0 +1,3601 @@
+{
+ "made_by": "python tools/learned_dispatch.py test",
+ "made": "2026-11-23",
+ "seeds": [
+  1,
+  30
+ ],
+ "cost": "jobs",
+ "weights": {
+  "drive": 2.4744,
+  "drive_served_1": -1.8101,
+  "drive_served_2": -1.5009,
+  "drive_load": -0.8174,
+  "drive_truck": -0.2856,
+  "waited": 2.0979,
+  "waited_long": -2.6076,
+  "discharge_1": 1.3658,
+  "discharge_2": 0.7576,
+  "load_0": 1.9592,
+  "load_1": -2.0018,
+  "load_2": -0.3841,
+  "deliver": 3.3488
+ },
+ "weights_made": "2026-11-21",
+ "rules": {
+  "nearest_feasible": {
+   "agv_wait_for_agv_min": {
+    "mean": 5.707,
+    "half": 0.199,
+    "n": 30
+   },
+   "quay_moves_per_crane_hour": {
+    "mean": 15.713,
+    "half": 0.282,
+    "n": 30
+   },
+   "ship_turnaround_min": {
+    "mean": 442.297,
+    "half": 26.811,
+    "n": 30
+   },
+   "truck_turnaround_min": {
+    "mean": 13.37,
+    "half": 0.545,
+    "n": 30
+   },
+   "quay_crane_wait_min": {
+    "mean": 282.653,
+    "half": 33.141,
+    "n": 30
+   },
+   "agv_km": {
+    "mean": 2033.087,
+    "half": 34.431,
+    "n": 30
+   },
+   "job_wait_max_min": {
+    "mean": 35.673,
+    "half": 2.878,
+    "n": 30
+   },
+   "cost_min": {
+    "mean": 4806.35,
+    "half": 202.945,
+    "n": 30
+   }
+  },
+  "longest_idle": {
+   "agv_wait_for_agv_min": {
+    "mean": 6.297,
+    "half": 0.189,
+    "n": 30
+   },
+   "quay_moves_per_crane_hour": {
+    "mean": 15.33,
+    "half": 0.257,
+    "n": 30
+   },
+   "ship_turnaround_min": {
+    "mean": 449.853,
+    "half": 26.92,
+    "n": 30
+   },
+   "truck_turnaround_min": {
+    "mean": 13.53,
+    "half": 0.644,
+    "n": 30
+   },
+   "quay_crane_wait_min": {
+    "mean": 302.547,
+    "half": 34.407,
+    "n": 30
+   },
+   "agv_km": {
+    "mean": 2224.17,
+    "half": 34.385,
+    "n": 30
+   },
+   "job_wait_max_min": {
+    "mean": 34.913,
+    "half": 3.151,
+    "n": 30
+   },
+   "cost_min": {
+    "mean": 5307.393,
+    "half": 200.518,
+    "n": 30
+   }
+  },
+  "balanced": {
+   "agv_wait_for_agv_min": {
+    "mean": 5.803,
+    "half": 0.177,
+    "n": 30
+   },
+   "quay_moves_per_crane_hour": {
+    "mean": 15.55,
+    "half": 0.278,
+    "n": 30
+   },
+   "ship_turnaround_min": {
+    "mean": 446.283,
+    "half": 26.968,
+    "n": 30
+   },
+   "truck_turnaround_min": {
+    "mean": 13.58,
+    "half": 0.669,
+    "n": 30
+   },
+   "quay_crane_wait_min": {
+    "mean": 282.803,
+    "half": 31.48,
+    "n": 30
+   },
+   "agv_km": {
+    "mean": 2058.38,
+    "half": 34.752,
+    "n": 30
+   },
+   "job_wait_max_min": {
+    "mean": 34.033,
+    "half": 3.836,
+    "n": 30
+   },
+   "cost_min": {
+    "mean": 4888.157,
+    "half": 185.338,
+    "n": 30
+   }
+  },
+  "nearest_job": {
+   "agv_wait_for_agv_min": {
+    "mean": 5.52,
+    "half": 0.157,
+    "n": 30
+   },
+   "quay_moves_per_crane_hour": {
+    "mean": 15.807,
+    "half": 0.241,
+    "n": 30
+   },
+   "ship_turnaround_min": {
+    "mean": 435.277,
+    "half": 28.205,
+    "n": 30
+   },
+   "truck_turnaround_min": {
+    "mean": 13.28,
+    "half": 0.593,
+    "n": 30
+   },
+   "quay_crane_wait_min": {
+    "mean": 236.73,
+    "half": 23.887,
+    "n": 30
+   },
+   "agv_km": {
+    "mean": 1936.307,
+    "half": 28.145,
+    "n": 30
+   },
+   "job_wait_max_min": {
+    "mean": 34.43,
+    "half": 2.557,
+    "n": 30
+   },
+   "cost_min": {
+    "mean": 4651.34,
+    "half": 174.043,
+    "n": 30
+   }
+  },
+  "learned": {
+   "agv_wait_for_agv_min": {
+    "mean": 5.553,
+    "half": 0.168,
+    "n": 30
+   },
+   "quay_moves_per_crane_hour": {
+    "mean": 15.827,
+    "half": 0.25,
+    "n": 30
+   },
+   "ship_turnaround_min": {
+    "mean": 437.227,
+    "half": 27.67,
+    "n": 30
+   },
+   "truck_turnaround_min": {
+    "mean": 13.43,
+    "half": 0.604,
+    "n": 30
+   },
+   "quay_crane_wait_min": {
+    "mean": 255.033,
+    "half": 29.342,
+    "n": 30
+   },
+   "agv_km": {
+    "mean": 1983.343,
+    "half": 30.789,
+    "n": 30
+   },
+   "job_wait_max_min": {
+    "mean": 35.3,
+    "half": 2.858,
+    "n": 30
+   },
+   "cost_min": {
+    "mean": 4684.6,
+    "half": 175.292,
+    "n": 30
+   }
+  }
+ },
+ "differences": [
+  {
+   "rule": "learned",
+   "against": "nearest_feasible",
+   "measures": {
+    "agv_wait_for_agv_min": {
+     "mean": -0.153,
+     "half": 0.095,
+     "n": 30
+    },
+    "quay_moves_per_crane_hour": {
+     "mean": 0.113,
+     "half": 0.122,
+     "n": 30
+    },
+    "ship_turnaround_min": {
+     "mean": -5.07,
+     "half": 3.939,
+     "n": 30
+    },
+    "truck_turnaround_min": {
+     "mean": 0.06,
+     "half": 0.247,
+     "n": 30
+    },
+    "quay_crane_wait_min": {
+     "mean": -27.62,
+     "half": 12.083,
+     "n": 30
+    },
+    "agv_km": {
+     "mean": -49.743,
+     "half": 11.697,
+     "n": 30
+    },
+    "job_wait_max_min": {
+     "mean": -0.373,
+     "half": 2.536,
+     "n": 30
+    },
+    "cost_min": {
+     "mean": -121.75,
+     "half": 75.893,
+     "n": 30
+    }
+   }
+  },
+  {
+   "rule": "learned",
+   "against": "nearest_job",
+   "measures": {
+    "agv_wait_for_agv_min": {
+     "mean": 0.033,
+     "half": 0.082,
+     "n": 30
+    },
+    "quay_moves_per_crane_hour": {
+     "mean": 0.02,
+     "half": 0.107,
+     "n": 30
+    },
+    "ship_turnaround_min": {
+     "mean": 1.95,
+     "half": 3.414,
+     "n": 30
+    },
+    "truck_turnaround_min": {
+     "mean": 0.15,
+     "half": 0.261,
+     "n": 30
+    },
+    "quay_crane_wait_min": {
+     "mean": 18.303,
+     "half": 9.428,
+     "n": 30
+    },
+    "agv_km": {
+     "mean": 47.037,
+     "half": 9.961,
+     "n": 30
+    },
+    "job_wait_max_min": {
+     "mean": 0.87,
+     "half": 2.936,
+     "n": 30
+    },
+    "cost_min": {
+     "mean": 33.26,
+     "half": 63.557,
+     "n": 30
+    }
+   }
+  },
+  {
+   "rule": "nearest_job",
+   "against": "nearest_feasible",
+   "measures": {
+    "agv_wait_for_agv_min": {
+     "mean": -0.187,
+     "half": 0.077,
+     "n": 30
+    },
+    "quay_moves_per_crane_hour": {
+     "mean": 0.093,
+     "half": 0.1,
+     "n": 30
+    },
+    "ship_turnaround_min": {
+     "mean": -7.02,
+     "half": 4.38,
+     "n": 30
+    },
+    "truck_turnaround_min": {
+     "mean": -0.09,
+     "half": 0.226,
+     "n": 30
+    },
+    "quay_crane_wait_min": {
+     "mean": -45.923,
+     "half": 13.385,
+     "n": 30
+    },
+    "agv_km": {
+     "mean": -96.78,
+     "half": 17.167,
+     "n": 30
+    },
+    "job_wait_max_min": {
+     "mean": -1.243,
+     "half": 2.27,
+     "n": 30
+    },
+    "cost_min": {
+     "mean": -155.01,
+     "half": 59.682,
+     "n": 30
+    }
+   }
+  },
+  {
+   "rule": "longest_idle",
+   "against": "nearest_feasible",
+   "measures": {
+    "agv_wait_for_agv_min": {
+     "mean": 0.59,
+     "half": 0.08,
+     "n": 30
+    },
+    "quay_moves_per_crane_hour": {
+     "mean": -0.383,
+     "half": 0.119,
+     "n": 30
+    },
+    "ship_turnaround_min": {
+     "mean": 7.557,
+     "half": 2.783,
+     "n": 30
+    },
+    "truck_turnaround_min": {
+     "mean": 0.16,
+     "half": 0.268,
+     "n": 30
+    },
+    "quay_crane_wait_min": {
+     "mean": 19.893,
+     "half": 10.597,
+     "n": 30
+    },
+    "agv_km": {
+     "mean": 191.083,
+     "half": 13.032,
+     "n": 30
+    },
+    "job_wait_max_min": {
+     "mean": -0.76,
+     "half": 3.572,
+     "n": 30
+    },
+    "cost_min": {
+     "mean": 501.043,
+     "half": 63.309,
+     "n": 30
+    }
+   }
+  },
+  {
+   "rule": "balanced",
+   "against": "nearest_feasible",
+   "measures": {
+    "agv_wait_for_agv_min": {
+     "mean": 0.097,
+     "half": 0.105,
+     "n": 30
+    },
+    "quay_moves_per_crane_hour": {
+     "mean": -0.163,
+     "half": 0.154,
+     "n": 30
+    },
+    "ship_turnaround_min": {
+     "mean": 3.987,
+     "half": 4.126,
+     "n": 30
+    },
+    "truck_turnaround_min": {
+     "mean": 0.21,
+     "half": 0.366,
+     "n": 30
+    },
+    "quay_crane_wait_min": {
+     "mean": 0.15,
+     "half": 18.673,
+     "n": 30
+    },
+    "agv_km": {
+     "mean": 25.293,
+     "half": 8.511,
+     "n": 30
+    },
+    "job_wait_max_min": {
+     "mean": -1.64,
+     "half": 3.593,
+     "n": 30
+    },
+    "cost_min": {
+     "mean": 81.807,
+     "half": 85.202,
+     "n": 30
+    }
+   }
+  }
+ ],
+ "finished": 150,
+ "problems": 0,
+ "runs": 150,
+ "published": {
+  "compared": 690,
+  "the_same": 690
+ },
+ "carry": [
+  {
+   "setting": {
+    "agvs": 18
+   },
+   "rules": {
+    "nearest_feasible": {
+     "agv_wait_for_agv_min": {
+      "mean": 8.14,
+      "half": 0.309,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 13.4,
+      "half": 0.347,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 511.93,
+      "half": 22.847,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 12.967,
+      "half": 0.597,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 656.88,
+      "half": 66.888,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 2108.76,
+      "half": 38.449,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 30.173,
+      "half": 2.505,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 6852.78,
+      "half": 322.125,
+      "n": 30
+     }
+    },
+    "nearest_job": {
+     "agv_wait_for_agv_min": {
+      "mean": 7.62,
+      "half": 0.277,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 13.873,
+      "half": 0.347,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 493.16,
+      "half": 24.262,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 12.94,
+      "half": 0.601,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 553.447,
+      "half": 58.76,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 1939.95,
+      "half": 29.194,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 30.947,
+      "half": 2.162,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 6424.85,
+      "half": 291.933,
+      "n": 30
+     }
+    },
+    "learned": {
+     "agv_wait_for_agv_min": {
+      "mean": 7.773,
+      "half": 0.27,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 13.717,
+      "half": 0.327,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 497.68,
+      "half": 23.757,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 12.85,
+      "half": 0.52,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 612.2,
+      "half": 56.796,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 2027.72,
+      "half": 32.22,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 31.013,
+      "half": 1.845,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 6548.707,
+      "half": 288.033,
+      "n": 30
+     }
+    }
+   },
+   "differences": [
+    {
+     "rule": "learned",
+     "against": "nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": -0.367,
+       "half": 0.093,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 0.317,
+       "half": 0.092,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -14.25,
+       "half": 4.128,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -0.117,
+       "half": 0.209,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -44.68,
+       "half": 15.79,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": -81.04,
+       "half": 11.62,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": 0.84,
+       "half": 1.514,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": -304.073,
+       "half": 78.355,
+       "n": 30
+      }
+     }
+    },
+    {
+     "rule": "learned",
+     "against": "nearest_job",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 0.153,
+       "half": 0.065,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": -0.157,
+       "half": 0.078,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 4.52,
+       "half": 2.62,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -0.09,
+       "half": 0.199,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 58.753,
+       "half": 12.349,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 87.77,
+       "half": 7.613,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": 0.067,
+       "half": 1.829,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": 123.857,
+       "half": 54.176,
+       "n": 30
+      }
+     }
+    },
+    {
+     "rule": "nearest_job",
+     "against": "nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": -0.52,
+       "half": 0.1,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 0.473,
+       "half": 0.087,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -18.77,
+       "half": 4.128,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -0.027,
+       "half": 0.239,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -103.433,
+       "half": 18.797,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": -168.81,
+       "half": 14.531,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": 0.773,
+       "half": 1.556,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": -427.93,
+       "half": 78.745,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "finished": 90,
+   "problems": 0,
+   "runs": 90
+  },
+  {
+   "setting": {
+    "agvs": 36
+   },
+   "rules": {
+    "nearest_feasible": {
+     "agv_wait_for_agv_min": {
+      "mean": 5.273,
+      "half": 0.179,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 16.017,
+      "half": 0.267,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 434.48,
+      "half": 27.865,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 13.613,
+      "half": 0.672,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 214.56,
+      "half": 29.197,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 1998.093,
+      "half": 33.811,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 35.53,
+      "half": 2.881,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 4442.893,
+      "half": 196.895,
+      "n": 30
+     }
+    },
+    "nearest_job": {
+     "agv_wait_for_agv_min": {
+      "mean": 5.157,
+      "half": 0.168,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 16.1,
+      "half": 0.267,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 428.377,
+      "half": 28.599,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 13.67,
+      "half": 0.747,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 195.58,
+      "half": 25.04,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 1936.94,
+      "half": 30.866,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 37.11,
+      "half": 2.703,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 4353.247,
+      "half": 183.66,
+      "n": 30
+     }
+    },
+    "learned": {
+     "agv_wait_for_agv_min": {
+      "mean": 5.157,
+      "half": 0.166,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 16.11,
+      "half": 0.261,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 430.843,
+      "half": 28.275,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 13.527,
+      "half": 0.653,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 208.227,
+      "half": 27.202,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 1963.163,
+      "half": 31.325,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 35.073,
+      "half": 2.646,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 4342.81,
+      "half": 180.051,
+      "n": 30
+     }
+    }
+   },
+   "differences": [
+    {
+     "rule": "learned",
+     "against": "nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": -0.117,
+       "half": 0.061,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 0.093,
+       "half": 0.087,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -3.637,
+       "half": 2.835,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -0.087,
+       "half": 0.258,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -6.333,
+       "half": 10.272,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": -34.93,
+       "half": 8.725,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": -0.457,
+       "half": 2.179,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": -100.083,
+       "half": 48.136,
+       "n": 30
+      }
+     }
+    },
+    {
+     "rule": "learned",
+     "against": "nearest_job",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": -0.0,
+       "half": 0.061,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 0.01,
+       "half": 0.097,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 2.467,
+       "half": 3.091,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -0.143,
+       "half": 0.252,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 12.647,
+       "half": 10.293,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 26.223,
+       "half": 8.605,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": -2.037,
+       "half": 2.933,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": -10.437,
+       "half": 49.856,
+       "n": 30
+      }
+     }
+    },
+    {
+     "rule": "nearest_job",
+     "against": "nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": -0.117,
+       "half": 0.069,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 0.083,
+       "half": 0.096,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -6.103,
+       "half": 3.634,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 0.057,
+       "half": 0.293,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -18.98,
+       "half": 12.28,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": -61.153,
+       "half": 12.995,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": 1.58,
+       "half": 2.868,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": -89.647,
+       "half": 55.898,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "finished": 90,
+   "problems": 0,
+   "runs": 90
+  },
+  {
+   "setting": {
+    "scale": "small"
+   },
+   "rules": {
+    "nearest_feasible": {
+     "agv_wait_for_agv_min": {
+      "mean": 17.45,
+      "half": 1.213,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 4.787,
+      "half": 0.261,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 71.987,
+      "half": 5.33,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 27.667,
+      "half": 3.025,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 56.667,
+      "half": 14.091,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 170.603,
+      "half": 6.283,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 64.07,
+      "half": 5.714,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 927.753,
+      "half": 84.705,
+      "n": 30
+     }
+    },
+    "nearest_job": {
+     "agv_wait_for_agv_min": {
+      "mean": 17.187,
+      "half": 1.196,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 4.877,
+      "half": 0.289,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 70.453,
+      "half": 5.215,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 27.5,
+      "half": 3.275,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 57.863,
+      "half": 13.898,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 168.977,
+      "half": 6.26,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 63.233,
+      "half": 5.079,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 913.537,
+      "half": 83.182,
+      "n": 30
+     }
+    },
+    "learned": {
+     "agv_wait_for_agv_min": {
+      "mean": 17.253,
+      "half": 1.234,
+      "n": 30
+     },
+     "quay_moves_per_crane_hour": {
+      "mean": 4.883,
+      "half": 0.289,
+      "n": 30
+     },
+     "ship_turnaround_min": {
+      "mean": 70.63,
+      "half": 5.612,
+      "n": 30
+     },
+     "truck_turnaround_min": {
+      "mean": 28.083,
+      "half": 3.353,
+      "n": 30
+     },
+     "quay_crane_wait_min": {
+      "mean": 54.41,
+      "half": 13.869,
+      "n": 30
+     },
+     "agv_km": {
+      "mean": 169.66,
+      "half": 6.42,
+      "n": 30
+     },
+     "job_wait_max_min": {
+      "mean": 62.863,
+      "half": 5.37,
+      "n": 30
+     },
+     "cost_min": {
+      "mean": 917.393,
+      "half": 86.446,
+      "n": 30
+     }
+    }
+   },
+   "differences": [
+    {
+     "rule": "learned",
+     "against": "nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": -0.197,
+       "half": 0.313,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 0.097,
+       "half": 0.14,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -1.357,
+       "half": 1.769,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 0.417,
+       "half": 1.373,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -2.257,
+       "half": 6.004,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": -0.943,
+       "half": 1.239,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": -1.207,
+       "half": 2.537,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": -10.36,
+       "half": 16.123,
+       "n": 30
+      }
+     }
+    },
+    {
+     "rule": "learned",
+     "against": "nearest_job",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": 0.067,
+       "half": 0.267,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 0.007,
+       "half": 0.117,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": 0.177,
+       "half": 1.648,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": 0.583,
+       "half": 1.151,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": -3.453,
+       "half": 5.691,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": 0.683,
+       "half": 1.468,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": -0.37,
+       "half": 2.263,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": 3.857,
+       "half": 14.37,
+       "n": 30
+      }
+     }
+    },
+    {
+     "rule": "nearest_job",
+     "against": "nearest_feasible",
+     "measures": {
+      "agv_wait_for_agv_min": {
+       "mean": -0.263,
+       "half": 0.297,
+       "n": 30
+      },
+      "quay_moves_per_crane_hour": {
+       "mean": 0.09,
+       "half": 0.157,
+       "n": 30
+      },
+      "ship_turnaround_min": {
+       "mean": -1.533,
+       "half": 2.176,
+       "n": 30
+      },
+      "truck_turnaround_min": {
+       "mean": -0.167,
+       "half": 1.377,
+       "n": 30
+      },
+      "quay_crane_wait_min": {
+       "mean": 1.197,
+       "half": 5.032,
+       "n": 30
+      },
+      "agv_km": {
+       "mean": -1.627,
+       "half": 1.895,
+       "n": 30
+      },
+      "job_wait_max_min": {
+       "mean": -0.837,
+       "half": 2.297,
+       "n": 30
+      },
+      "cost_min": {
+       "mean": -14.217,
+       "half": 15.264,
+       "n": 30
+      }
+     }
+    }
+   ],
+   "finished": 90,
+   "problems": 0,
+   "runs": 90
+  }
+ ],
+ "plan": {
+  "nearest_feasible": {
+   "agv_wait_for_agv_min": 12.9,
+   "quay_moves_per_crane_hour": 4.9,
+   "ship_turnaround_min": 69.3,
+   "truck_turnaround_min": 14.7,
+   "quay_crane_wait_min": 5.9,
+   "agv_km": 156.2,
+   "end_min": 115.1,
+   "cost_min": 647.7,
+   "job_wait_max_min": 47.5,
+   "problems": 0,
+   "finished": 1
+  },
+  "nearest_job": {
+   "agv_wait_for_agv_min": 12.1,
+   "quay_moves_per_crane_hour": 5.6,
+   "ship_turnaround_min": 62.9,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 12.5,
+   "agv_km": 148.2,
+   "end_min": 114.3,
+   "cost_min": 605.5,
+   "job_wait_max_min": 51.4,
+   "problems": 0,
+   "finished": 1
+  },
+  "learned": {
+   "agv_wait_for_agv_min": 13.1,
+   "quay_moves_per_crane_hour": 5.7,
+   "ship_turnaround_min": 64.9,
+   "truck_turnaround_min": 15.9,
+   "quay_crane_wait_min": 8.7,
+   "agv_km": 155.7,
+   "end_min": 121.5,
+   "cost_min": 658.3,
+   "job_wait_max_min": 47.8,
+   "problems": 0,
+   "finished": 1
+  }
+ },
+ "each_run": [
+  {
+   "seed": 1,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 362.9,
+   "truck_turnaround_min": 12.5,
+   "quay_crane_wait_min": 223.4,
+   "agv_km": 1940.0,
+   "end_min": 822.3,
+   "cost_min": 4418.5,
+   "job_wait_max_min": 36.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 2,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.8,
+   "quay_moves_per_crane_hour": 15.2,
+   "ship_turnaround_min": 405.6,
+   "truck_turnaround_min": 12.1,
+   "quay_crane_wait_min": 415.4,
+   "agv_km": 2070.8,
+   "end_min": 840.6,
+   "cost_min": 5674.0,
+   "job_wait_max_min": 35.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 3,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 14.7,
+   "ship_turnaround_min": 415.1,
+   "truck_turnaround_min": 13.7,
+   "quay_crane_wait_min": 337.7,
+   "agv_km": 1977.5,
+   "end_min": 843.2,
+   "cost_min": 4941.2,
+   "job_wait_max_min": 24.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 4,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.3,
+   "quay_moves_per_crane_hour": 16.2,
+   "ship_turnaround_min": 457.3,
+   "truck_turnaround_min": 14.9,
+   "quay_crane_wait_min": 161.6,
+   "agv_km": 1928.1,
+   "end_min": 847.4,
+   "cost_min": 4140.5,
+   "job_wait_max_min": 48.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 5,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 389.1,
+   "truck_turnaround_min": 13.3,
+   "quay_crane_wait_min": 219.1,
+   "agv_km": 1830.3,
+   "end_min": 793.9,
+   "cost_min": 4230.3,
+   "job_wait_max_min": 47.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 6,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.1,
+   "quay_moves_per_crane_hour": 16.2,
+   "ship_turnaround_min": 537.5,
+   "truck_turnaround_min": 11.4,
+   "quay_crane_wait_min": 179.7,
+   "agv_km": 2057.1,
+   "end_min": 1078.6,
+   "cost_min": 4282.2,
+   "job_wait_max_min": 31.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 7,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 445.1,
+   "truck_turnaround_min": 16.7,
+   "quay_crane_wait_min": 348.3,
+   "agv_km": 2094.8,
+   "end_min": 874.3,
+   "cost_min": 5250.8,
+   "job_wait_max_min": 51.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 8,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 14.7,
+   "ship_turnaround_min": 380.2,
+   "truck_turnaround_min": 12.4,
+   "quay_crane_wait_min": 269.7,
+   "agv_km": 1970.3,
+   "end_min": 851.7,
+   "cost_min": 4691.3,
+   "job_wait_max_min": 42.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 9,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.1,
+   "quay_moves_per_crane_hour": 15.8,
+   "ship_turnaround_min": 506.9,
+   "truck_turnaround_min": 12.9,
+   "quay_crane_wait_min": 149.5,
+   "agv_km": 2108.9,
+   "end_min": 939.1,
+   "cost_min": 4520.3,
+   "job_wait_max_min": 41.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 10,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 15.1,
+   "ship_turnaround_min": 370.3,
+   "truck_turnaround_min": 12.3,
+   "quay_crane_wait_min": 228.8,
+   "agv_km": 1979.6,
+   "end_min": 833.5,
+   "cost_min": 4459.3,
+   "job_wait_max_min": 34.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 11,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 15.2,
+   "ship_turnaround_min": 475.3,
+   "truck_turnaround_min": 11.5,
+   "quay_crane_wait_min": 387.8,
+   "agv_km": 2230.2,
+   "end_min": 900.9,
+   "cost_min": 5643.7,
+   "job_wait_max_min": 30.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 12,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.3,
+   "quay_moves_per_crane_hour": 17.2,
+   "ship_turnaround_min": 448.9,
+   "truck_turnaround_min": 14.9,
+   "quay_crane_wait_min": 298.5,
+   "agv_km": 2014.2,
+   "end_min": 1083.5,
+   "cost_min": 4415.0,
+   "job_wait_max_min": 27.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 13,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 4.9,
+   "quay_moves_per_crane_hour": 16.9,
+   "ship_turnaround_min": 431.7,
+   "truck_turnaround_min": 11.6,
+   "quay_crane_wait_min": 148.5,
+   "agv_km": 2029.4,
+   "end_min": 891.3,
+   "cost_min": 4165.5,
+   "job_wait_max_min": 29.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 14,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.3,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 438.3,
+   "truck_turnaround_min": 12.5,
+   "quay_crane_wait_min": 482.4,
+   "agv_km": 2235.7,
+   "end_min": 851.4,
+   "cost_min": 5798.5,
+   "job_wait_max_min": 37.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 15,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.8,
+   "quay_moves_per_crane_hour": 14.8,
+   "ship_turnaround_min": 450.5,
+   "truck_turnaround_min": 15.0,
+   "quay_crane_wait_min": 356.8,
+   "agv_km": 2051.8,
+   "end_min": 899.2,
+   "cost_min": 4957.2,
+   "job_wait_max_min": 30.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 16,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 395.7,
+   "truck_turnaround_min": 15.3,
+   "quay_crane_wait_min": 310.0,
+   "agv_km": 2078.2,
+   "end_min": 847.6,
+   "cost_min": 5109.8,
+   "job_wait_max_min": 43.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 17,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 16.1,
+   "ship_turnaround_min": 398.7,
+   "truck_turnaround_min": 14.4,
+   "quay_crane_wait_min": 320.3,
+   "agv_km": 2111.2,
+   "end_min": 822.8,
+   "cost_min": 4973.5,
+   "job_wait_max_min": 32.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 18,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 550.0,
+   "truck_turnaround_min": 11.5,
+   "quay_crane_wait_min": 341.5,
+   "agv_km": 2087.6,
+   "end_min": 1082.8,
+   "cost_min": 5204.5,
+   "job_wait_max_min": 26.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 19,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.2,
+   "ship_turnaround_min": 408.3,
+   "truck_turnaround_min": 15.1,
+   "quay_crane_wait_min": 354.4,
+   "agv_km": 2097.9,
+   "end_min": 891.9,
+   "cost_min": 5208.7,
+   "job_wait_max_min": 31.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 20,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 4.4,
+   "quay_moves_per_crane_hour": 17.9,
+   "ship_turnaround_min": 700.8,
+   "truck_turnaround_min": 12.6,
+   "quay_crane_wait_min": 122.5,
+   "agv_km": 1977.9,
+   "end_min": 1596.0,
+   "cost_min": 3713.3,
+   "job_wait_max_min": 27.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 21,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 15.6,
+   "ship_turnaround_min": 385.1,
+   "truck_turnaround_min": 15.0,
+   "quay_crane_wait_min": 256.2,
+   "agv_km": 2029.7,
+   "end_min": 819.1,
+   "cost_min": 4724.7,
+   "job_wait_max_min": 41.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 22,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.5,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 400.2,
+   "truck_turnaround_min": 15.0,
+   "quay_crane_wait_min": 326.7,
+   "agv_km": 2033.7,
+   "end_min": 813.9,
+   "cost_min": 5547.7,
+   "job_wait_max_min": 52.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 23,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.6,
+   "quay_moves_per_crane_hour": 15.2,
+   "ship_turnaround_min": 419.5,
+   "truck_turnaround_min": 12.6,
+   "quay_crane_wait_min": 375.8,
+   "agv_km": 1968.1,
+   "end_min": 805.8,
+   "cost_min": 5309.8,
+   "job_wait_max_min": 41.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 24,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.6,
+   "ship_turnaround_min": 433.6,
+   "truck_turnaround_min": 13.3,
+   "quay_crane_wait_min": 357.6,
+   "agv_km": 2170.6,
+   "end_min": 848.0,
+   "cost_min": 5369.0,
+   "job_wait_max_min": 33.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 25,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.2,
+   "quay_moves_per_crane_hour": 16.2,
+   "ship_turnaround_min": 416.6,
+   "truck_turnaround_min": 13.4,
+   "quay_crane_wait_min": 231.7,
+   "agv_km": 1931.5,
+   "end_min": 965.8,
+   "cost_min": 4206.0,
+   "job_wait_max_min": 28.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 26,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 16.0,
+   "ship_turnaround_min": 381.8,
+   "truck_turnaround_min": 12.2,
+   "quay_crane_wait_min": 201.4,
+   "agv_km": 2040.3,
+   "end_min": 889.7,
+   "cost_min": 4583.2,
+   "job_wait_max_min": 33.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 27,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 15.2,
+   "ship_turnaround_min": 408.2,
+   "truck_turnaround_min": 12.7,
+   "quay_crane_wait_min": 247.6,
+   "agv_km": 1998.2,
+   "end_min": 830.1,
+   "cost_min": 4649.2,
+   "job_wait_max_min": 25.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 28,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.1,
+   "quay_moves_per_crane_hour": 17.1,
+   "ship_turnaround_min": 582.3,
+   "truck_turnaround_min": 13.8,
+   "quay_crane_wait_min": 196.0,
+   "agv_km": 1859.3,
+   "end_min": 1435.6,
+   "cost_min": 4029.3,
+   "job_wait_max_min": 38.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 29,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 432.0,
+   "truck_turnaround_min": 15.2,
+   "quay_crane_wait_min": 345.3,
+   "agv_km": 2035.5,
+   "end_min": 858.1,
+   "cost_min": 4834.5,
+   "job_wait_max_min": 30.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 30,
+   "rule": "nearest_feasible",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 441.4,
+   "truck_turnaround_min": 11.3,
+   "quay_crane_wait_min": 285.4,
+   "agv_km": 2054.2,
+   "end_min": 831.3,
+   "cost_min": 5139.0,
+   "job_wait_max_min": 34.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 1,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 15.6,
+   "ship_turnaround_min": 361.1,
+   "truck_turnaround_min": 11.4,
+   "quay_crane_wait_min": 249.1,
+   "agv_km": 2140.7,
+   "end_min": 814.4,
+   "cost_min": 4950.5,
+   "job_wait_max_min": 31.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 2,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 7.0,
+   "quay_moves_per_crane_hour": 14.8,
+   "ship_turnaround_min": 408.7,
+   "truck_turnaround_min": 11.6,
+   "quay_crane_wait_min": 416.9,
+   "agv_km": 2225.4,
+   "end_min": 846.3,
+   "cost_min": 5910.0,
+   "job_wait_max_min": 33.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 3,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.4,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 418.1,
+   "truck_turnaround_min": 13.4,
+   "quay_crane_wait_min": 322.3,
+   "agv_km": 2126.3,
+   "end_min": 852.1,
+   "cost_min": 5198.7,
+   "job_wait_max_min": 32.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 4,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 16.3,
+   "ship_turnaround_min": 452.6,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 174.2,
+   "agv_km": 2104.7,
+   "end_min": 846.0,
+   "cost_min": 4598.7,
+   "job_wait_max_min": 31.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 5,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.6,
+   "ship_turnaround_min": 389.1,
+   "truck_turnaround_min": 13.0,
+   "quay_crane_wait_min": 179.1,
+   "agv_km": 2047.0,
+   "end_min": 797.4,
+   "cost_min": 4591.3,
+   "job_wait_max_min": 52.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 6,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 540.2,
+   "truck_turnaround_min": 11.2,
+   "quay_crane_wait_min": 188.6,
+   "agv_km": 2290.1,
+   "end_min": 1087.3,
+   "cost_min": 4767.5,
+   "job_wait_max_min": 31.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 7,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.7,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 459.6,
+   "truck_turnaround_min": 17.1,
+   "quay_crane_wait_min": 347.2,
+   "agv_km": 2296.8,
+   "end_min": 903.8,
+   "cost_min": 5974.2,
+   "job_wait_max_min": 40.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 8,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 14.5,
+   "ship_turnaround_min": 381.4,
+   "truck_turnaround_min": 12.8,
+   "quay_crane_wait_min": 275.6,
+   "agv_km": 2192.4,
+   "end_min": 851.1,
+   "cost_min": 5097.8,
+   "job_wait_max_min": 39.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 9,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.8,
+   "quay_moves_per_crane_hour": 15.6,
+   "ship_turnaround_min": 509.2,
+   "truck_turnaround_min": 12.9,
+   "quay_crane_wait_min": 157.2,
+   "agv_km": 2353.2,
+   "end_min": 945.1,
+   "cost_min": 5095.5,
+   "job_wait_max_min": 37.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 10,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.0,
+   "ship_turnaround_min": 375.0,
+   "truck_turnaround_min": 13.7,
+   "quay_crane_wait_min": 247.2,
+   "agv_km": 2152.5,
+   "end_min": 838.2,
+   "cost_min": 4813.0,
+   "job_wait_max_min": 29.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 11,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.7,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 481.1,
+   "truck_turnaround_min": 11.7,
+   "quay_crane_wait_min": 461.7,
+   "agv_km": 2391.2,
+   "end_min": 911.2,
+   "cost_min": 6107.5,
+   "job_wait_max_min": 33.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 12,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.8,
+   "quay_moves_per_crane_hour": 16.5,
+   "ship_turnaround_min": 462.7,
+   "truck_turnaround_min": 14.5,
+   "quay_crane_wait_min": 281.0,
+   "agv_km": 2212.9,
+   "end_min": 1097.7,
+   "cost_min": 4898.2,
+   "job_wait_max_min": 41.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 13,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 16.2,
+   "ship_turnaround_min": 454.1,
+   "truck_turnaround_min": 11.7,
+   "quay_crane_wait_min": 165.4,
+   "agv_km": 2243.3,
+   "end_min": 923.7,
+   "cost_min": 4589.5,
+   "job_wait_max_min": 33.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 14,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.8,
+   "quay_moves_per_crane_hour": 15.1,
+   "ship_turnaround_min": 450.1,
+   "truck_turnaround_min": 12.4,
+   "quay_crane_wait_min": 476.8,
+   "agv_km": 2454.8,
+   "end_min": 865.2,
+   "cost_min": 6238.7,
+   "job_wait_max_min": 37.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 15,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.5,
+   "quay_moves_per_crane_hour": 14.3,
+   "ship_turnaround_min": 463.0,
+   "truck_turnaround_min": 14.9,
+   "quay_crane_wait_min": 373.6,
+   "agv_km": 2227.6,
+   "end_min": 911.1,
+   "cost_min": 5516.5,
+   "job_wait_max_min": 31.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 16,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.8,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 409.0,
+   "truck_turnaround_min": 17.1,
+   "quay_crane_wait_min": 341.4,
+   "agv_km": 2257.7,
+   "end_min": 857.5,
+   "cost_min": 5658.7,
+   "job_wait_max_min": 32.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 17,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.4,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 405.9,
+   "truck_turnaround_min": 15.3,
+   "quay_crane_wait_min": 336.6,
+   "agv_km": 2328.8,
+   "end_min": 821.7,
+   "cost_min": 5553.3,
+   "job_wait_max_min": 27.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 18,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.7,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 557.0,
+   "truck_turnaround_min": 11.9,
+   "quay_crane_wait_min": 391.8,
+   "agv_km": 2199.8,
+   "end_min": 1086.6,
+   "cost_min": 5692.2,
+   "job_wait_max_min": 25.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 19,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.7,
+   "quay_moves_per_crane_hour": 14.6,
+   "ship_turnaround_min": 410.8,
+   "truck_turnaround_min": 15.0,
+   "quay_crane_wait_min": 338.1,
+   "agv_km": 2261.4,
+   "end_min": 904.5,
+   "cost_min": 5790.3,
+   "job_wait_max_min": 31.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 20,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.1,
+   "quay_moves_per_crane_hour": 17.2,
+   "ship_turnaround_min": 708.8,
+   "truck_turnaround_min": 13.2,
+   "quay_crane_wait_min": 168.9,
+   "agv_km": 2245.0,
+   "end_min": 1613.2,
+   "cost_min": 4305.7,
+   "job_wait_max_min": 29.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 21,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.4,
+   "quay_moves_per_crane_hour": 15.1,
+   "ship_turnaround_min": 397.5,
+   "truck_turnaround_min": 15.6,
+   "quay_crane_wait_min": 309.2,
+   "agv_km": 2223.8,
+   "end_min": 821.7,
+   "cost_min": 5372.3,
+   "job_wait_max_min": 38.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 22,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.7,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 396.8,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 330.5,
+   "agv_km": 2188.8,
+   "end_min": 811.0,
+   "cost_min": 5728.0,
+   "job_wait_max_min": 35.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 23,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 7.2,
+   "quay_moves_per_crane_hour": 14.6,
+   "ship_turnaround_min": 429.5,
+   "truck_turnaround_min": 11.7,
+   "quay_crane_wait_min": 441.8,
+   "agv_km": 2104.6,
+   "end_min": 824.6,
+   "cost_min": 5780.8,
+   "job_wait_max_min": 34.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 24,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.5,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 439.0,
+   "truck_turnaround_min": 13.3,
+   "quay_crane_wait_min": 377.9,
+   "agv_km": 2344.8,
+   "end_min": 854.0,
+   "cost_min": 5870.5,
+   "job_wait_max_min": 24.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 25,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.8,
+   "ship_turnaround_min": 426.9,
+   "truck_turnaround_min": 14.5,
+   "quay_crane_wait_min": 226.4,
+   "agv_km": 2157.4,
+   "end_min": 969.2,
+   "cost_min": 4661.7,
+   "job_wait_max_min": 23.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 26,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.8,
+   "quay_moves_per_crane_hour": 14.6,
+   "ship_turnaround_min": 413.1,
+   "truck_turnaround_min": 12.6,
+   "quay_crane_wait_min": 264.4,
+   "agv_km": 2208.1,
+   "end_min": 900.8,
+   "cost_min": 5692.8,
+   "job_wait_max_min": 66.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 27,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.0,
+   "ship_turnaround_min": 411.5,
+   "truck_turnaround_min": 12.8,
+   "quay_crane_wait_min": 266.5,
+   "agv_km": 2188.9,
+   "end_min": 839.4,
+   "cost_min": 4986.2,
+   "job_wait_max_min": 35.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 28,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 16.4,
+   "ship_turnaround_min": 590.8,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 230.2,
+   "agv_km": 2093.3,
+   "end_min": 1447.2,
+   "cost_min": 4680.0,
+   "job_wait_max_min": 43.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 29,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.4,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 439.6,
+   "truck_turnaround_min": 16.9,
+   "quay_crane_wait_min": 379.0,
+   "agv_km": 2200.7,
+   "end_min": 863.8,
+   "cost_min": 5361.0,
+   "job_wait_max_min": 33.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 30,
+   "rule": "longest_idle",
+   "agv_wait_for_agv_min": 6.7,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 453.4,
+   "truck_turnaround_min": 11.4,
+   "quay_crane_wait_min": 357.8,
+   "agv_km": 2263.1,
+   "end_min": 851.1,
+   "cost_min": 5740.7,
+   "job_wait_max_min": 29.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 1,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 15.8,
+   "ship_turnaround_min": 361.6,
+   "truck_turnaround_min": 12.4,
+   "quay_crane_wait_min": 224.7,
+   "agv_km": 1981.7,
+   "end_min": 818.3,
+   "cost_min": 4365.2,
+   "job_wait_max_min": 29.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 2,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.6,
+   "quay_moves_per_crane_hour": 15.4,
+   "ship_turnaround_min": 386.3,
+   "truck_turnaround_min": 11.4,
+   "quay_crane_wait_min": 379.0,
+   "agv_km": 2124.3,
+   "end_min": 829.8,
+   "cost_min": 5583.3,
+   "job_wait_max_min": 27.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 3,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 14.8,
+   "ship_turnaround_min": 412.9,
+   "truck_turnaround_min": 13.8,
+   "quay_crane_wait_min": 295.6,
+   "agv_km": 1981.6,
+   "end_min": 846.8,
+   "cost_min": 4746.3,
+   "job_wait_max_min": 25.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 4,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 16.4,
+   "ship_turnaround_min": 453.8,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 166.8,
+   "agv_km": 1951.1,
+   "end_min": 847.5,
+   "cost_min": 4233.2,
+   "job_wait_max_min": 42.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 5,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 14.7,
+   "ship_turnaround_min": 412.5,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 178.8,
+   "agv_km": 1877.6,
+   "end_min": 811.7,
+   "cost_min": 4636.5,
+   "job_wait_max_min": 60.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 6,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.2,
+   "quay_moves_per_crane_hour": 16.0,
+   "ship_turnaround_min": 548.2,
+   "truck_turnaround_min": 11.1,
+   "quay_crane_wait_min": 172.6,
+   "agv_km": 2086.8,
+   "end_min": 1098.5,
+   "cost_min": 4413.7,
+   "job_wait_max_min": 30.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 7,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 15.2,
+   "ship_turnaround_min": 454.1,
+   "truck_turnaround_min": 15.9,
+   "quay_crane_wait_min": 331.8,
+   "agv_km": 2136.3,
+   "end_min": 890.7,
+   "cost_min": 5485.3,
+   "job_wait_max_min": 35.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 8,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.8,
+   "quay_moves_per_crane_hour": 14.5,
+   "ship_turnaround_min": 381.3,
+   "truck_turnaround_min": 12.7,
+   "quay_crane_wait_min": 266.1,
+   "agv_km": 2022.0,
+   "end_min": 854.7,
+   "cost_min": 4771.7,
+   "job_wait_max_min": 47.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 9,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.3,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 507.9,
+   "truck_turnaround_min": 12.8,
+   "quay_crane_wait_min": 163.8,
+   "agv_km": 2142.5,
+   "end_min": 939.6,
+   "cost_min": 4649.5,
+   "job_wait_max_min": 39.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 10,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 15.2,
+   "ship_turnaround_min": 371.9,
+   "truck_turnaround_min": 12.7,
+   "quay_crane_wait_min": 215.3,
+   "agv_km": 2004.9,
+   "end_min": 825.7,
+   "cost_min": 4468.7,
+   "job_wait_max_min": 33.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 11,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 471.4,
+   "truck_turnaround_min": 12.1,
+   "quay_crane_wait_min": 344.8,
+   "agv_km": 2217.8,
+   "end_min": 880.1,
+   "cost_min": 5695.8,
+   "job_wait_max_min": 33.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 12,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.3,
+   "quay_moves_per_crane_hour": 17.2,
+   "ship_turnaround_min": 450.8,
+   "truck_turnaround_min": 13.9,
+   "quay_crane_wait_min": 265.3,
+   "agv_km": 2012.0,
+   "end_min": 1084.9,
+   "cost_min": 4439.7,
+   "job_wait_max_min": 21.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 13,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 4.9,
+   "quay_moves_per_crane_hour": 16.7,
+   "ship_turnaround_min": 439.8,
+   "truck_turnaround_min": 11.8,
+   "quay_crane_wait_min": 151.0,
+   "agv_km": 2064.8,
+   "end_min": 901.9,
+   "cost_min": 4150.5,
+   "job_wait_max_min": 27.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 14,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.3,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 448.6,
+   "truck_turnaround_min": 11.7,
+   "quay_crane_wait_min": 447.4,
+   "agv_km": 2279.6,
+   "end_min": 857.0,
+   "cost_min": 5766.8,
+   "job_wait_max_min": 38.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 15,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 14.6,
+   "ship_turnaround_min": 453.5,
+   "truck_turnaround_min": 15.9,
+   "quay_crane_wait_min": 371.4,
+   "agv_km": 2073.5,
+   "end_min": 901.2,
+   "cost_min": 5196.0,
+   "job_wait_max_min": 29.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 16,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 15.0,
+   "ship_turnaround_min": 402.9,
+   "truck_turnaround_min": 17.3,
+   "quay_crane_wait_min": 314.4,
+   "agv_km": 2067.6,
+   "end_min": 861.6,
+   "cost_min": 5213.7,
+   "job_wait_max_min": 41.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 17,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 16.0,
+   "ship_turnaround_min": 403.8,
+   "truck_turnaround_min": 14.2,
+   "quay_crane_wait_min": 323.6,
+   "agv_km": 2148.5,
+   "end_min": 822.5,
+   "cost_min": 5000.3,
+   "job_wait_max_min": 23.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 18,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.4,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 549.9,
+   "truck_turnaround_min": 11.6,
+   "quay_crane_wait_min": 370.5,
+   "agv_km": 2099.6,
+   "end_min": 1079.8,
+   "cost_min": 5384.3,
+   "job_wait_max_min": 25.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 19,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 405.7,
+   "truck_turnaround_min": 15.1,
+   "quay_crane_wait_min": 296.4,
+   "agv_km": 2123.5,
+   "end_min": 884.7,
+   "cost_min": 5164.5,
+   "job_wait_max_min": 32.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 20,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 4.6,
+   "quay_moves_per_crane_hour": 17.5,
+   "ship_turnaround_min": 705.1,
+   "truck_turnaround_min": 12.5,
+   "quay_crane_wait_min": 111.7,
+   "agv_km": 1994.4,
+   "end_min": 1610.2,
+   "cost_min": 3904.7,
+   "job_wait_max_min": 30.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 21,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 15.1,
+   "ship_turnaround_min": 402.6,
+   "truck_turnaround_min": 17.8,
+   "quay_crane_wait_min": 371.2,
+   "agv_km": 2039.9,
+   "end_min": 826.3,
+   "cost_min": 5122.8,
+   "job_wait_max_min": 40.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 22,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 395.4,
+   "truck_turnaround_min": 13.9,
+   "quay_crane_wait_min": 326.6,
+   "agv_km": 2058.9,
+   "end_min": 819.7,
+   "cost_min": 5163.7,
+   "job_wait_max_min": 26.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 23,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 413.3,
+   "truck_turnaround_min": 12.1,
+   "quay_crane_wait_min": 335.9,
+   "agv_km": 1946.3,
+   "end_min": 801.1,
+   "cost_min": 5037.5,
+   "job_wait_max_min": 33.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 24,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.8,
+   "ship_turnaround_min": 424.7,
+   "truck_turnaround_min": 13.0,
+   "quay_crane_wait_min": 316.7,
+   "agv_km": 2240.3,
+   "end_min": 842.0,
+   "cost_min": 5363.8,
+   "job_wait_max_min": 25.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 25,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 425.1,
+   "truck_turnaround_min": 14.2,
+   "quay_crane_wait_min": 239.6,
+   "agv_km": 1954.5,
+   "end_min": 965.7,
+   "cost_min": 4355.3,
+   "job_wait_max_min": 36.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 26,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.5,
+   "quay_moves_per_crane_hour": 14.3,
+   "ship_turnaround_min": 424.5,
+   "truck_turnaround_min": 15.1,
+   "quay_crane_wait_min": 402.7,
+   "agv_km": 2036.0,
+   "end_min": 889.0,
+   "cost_min": 5429.7,
+   "job_wait_max_min": 67.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 27,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 401.7,
+   "truck_turnaround_min": 12.7,
+   "quay_crane_wait_min": 241.0,
+   "agv_km": 2012.1,
+   "end_min": 827.9,
+   "cost_min": 4567.5,
+   "job_wait_max_min": 24.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 28,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 16.3,
+   "ship_turnaround_min": 592.5,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 216.8,
+   "agv_km": 1925.2,
+   "end_min": 1443.8,
+   "cost_min": 4379.8,
+   "job_wait_max_min": 33.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 29,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 438.6,
+   "truck_turnaround_min": 16.2,
+   "quay_crane_wait_min": 332.6,
+   "agv_km": 2081.8,
+   "end_min": 863.1,
+   "cost_min": 4832.2,
+   "job_wait_max_min": 25.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 30,
+   "rule": "balanced",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.2,
+   "ship_turnaround_min": 448.1,
+   "truck_turnaround_min": 11.2,
+   "quay_crane_wait_min": 310.0,
+   "agv_km": 2066.3,
+   "end_min": 882.2,
+   "cost_min": 5122.7,
+   "job_wait_max_min": 33.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 1,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 357.4,
+   "truck_turnaround_min": 12.5,
+   "quay_crane_wait_min": 206.3,
+   "agv_km": 1897.0,
+   "end_min": 814.0,
+   "cost_min": 4297.3,
+   "job_wait_max_min": 30.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 2,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 376.0,
+   "truck_turnaround_min": 11.9,
+   "quay_crane_wait_min": 284.9,
+   "agv_km": 1991.0,
+   "end_min": 812.9,
+   "cost_min": 5165.7,
+   "job_wait_max_min": 27.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 3,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.0,
+   "ship_turnaround_min": 399.2,
+   "truck_turnaround_min": 13.9,
+   "quay_crane_wait_min": 269.0,
+   "agv_km": 1867.2,
+   "end_min": 823.3,
+   "cost_min": 4588.0,
+   "job_wait_max_min": 27.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 4,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.2,
+   "quay_moves_per_crane_hour": 16.4,
+   "ship_turnaround_min": 455.6,
+   "truck_turnaround_min": 13.3,
+   "quay_crane_wait_min": 155.5,
+   "agv_km": 1857.7,
+   "end_min": 850.8,
+   "cost_min": 4063.5,
+   "job_wait_max_min": 33.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 5,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 375.8,
+   "truck_turnaround_min": 12.3,
+   "quay_crane_wait_min": 146.9,
+   "agv_km": 1776.6,
+   "end_min": 790.6,
+   "cost_min": 4198.0,
+   "job_wait_max_min": 45.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 6,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.1,
+   "quay_moves_per_crane_hour": 16.0,
+   "ship_turnaround_min": 538.8,
+   "truck_turnaround_min": 11.1,
+   "quay_crane_wait_min": 171.8,
+   "agv_km": 2028.0,
+   "end_min": 1078.8,
+   "cost_min": 4272.2,
+   "job_wait_max_min": 32.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 7,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 440.6,
+   "truck_turnaround_min": 16.3,
+   "quay_crane_wait_min": 297.6,
+   "agv_km": 2018.4,
+   "end_min": 858.6,
+   "cost_min": 5330.7,
+   "job_wait_max_min": 35.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 8,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 370.2,
+   "truck_turnaround_min": 12.2,
+   "quay_crane_wait_min": 194.7,
+   "agv_km": 1904.2,
+   "end_min": 846.8,
+   "cost_min": 4487.0,
+   "job_wait_max_min": 41.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 9,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.2,
+   "quay_moves_per_crane_hour": 15.6,
+   "ship_turnaround_min": 511.3,
+   "truck_turnaround_min": 12.5,
+   "quay_crane_wait_min": 151.9,
+   "agv_km": 2084.9,
+   "end_min": 940.3,
+   "cost_min": 4538.5,
+   "job_wait_max_min": 37.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 10,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 365.5,
+   "truck_turnaround_min": 12.6,
+   "quay_crane_wait_min": 194.2,
+   "agv_km": 1878.2,
+   "end_min": 836.7,
+   "cost_min": 4354.5,
+   "job_wait_max_min": 39.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 11,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 453.6,
+   "truck_turnaround_min": 12.1,
+   "quay_crane_wait_min": 322.3,
+   "agv_km": 2039.1,
+   "end_min": 862.9,
+   "cost_min": 5421.7,
+   "job_wait_max_min": 26.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 12,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.3,
+   "quay_moves_per_crane_hour": 17.0,
+   "ship_turnaround_min": 449.8,
+   "truck_turnaround_min": 15.0,
+   "quay_crane_wait_min": 265.7,
+   "agv_km": 1929.8,
+   "end_min": 1084.6,
+   "cost_min": 4411.8,
+   "job_wait_max_min": 33.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 13,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 4.7,
+   "quay_moves_per_crane_hour": 16.9,
+   "ship_turnaround_min": 432.4,
+   "truck_turnaround_min": 11.6,
+   "quay_crane_wait_min": 142.1,
+   "agv_km": 1944.4,
+   "end_min": 885.2,
+   "cost_min": 3970.2,
+   "job_wait_max_min": 33.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 14,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 450.5,
+   "truck_turnaround_min": 12.2,
+   "quay_crane_wait_min": 337.1,
+   "agv_km": 2065.8,
+   "end_min": 941.9,
+   "cost_min": 5421.2,
+   "job_wait_max_min": 39.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 15,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 435.9,
+   "truck_turnaround_min": 14.0,
+   "quay_crane_wait_min": 318.5,
+   "agv_km": 1980.1,
+   "end_min": 896.1,
+   "cost_min": 4845.3,
+   "job_wait_max_min": 30.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 16,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.1,
+   "ship_turnaround_min": 404.1,
+   "truck_turnaround_min": 16.0,
+   "quay_crane_wait_min": 276.0,
+   "agv_km": 1927.8,
+   "end_min": 856.8,
+   "cost_min": 5043.3,
+   "job_wait_max_min": 40.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 17,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 16.1,
+   "ship_turnaround_min": 398.4,
+   "truck_turnaround_min": 15.3,
+   "quay_crane_wait_min": 279.2,
+   "agv_km": 2004.1,
+   "end_min": 820.3,
+   "cost_min": 4869.7,
+   "job_wait_max_min": 27.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 18,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 547.2,
+   "truck_turnaround_min": 11.5,
+   "quay_crane_wait_min": 333.0,
+   "agv_km": 1936.0,
+   "end_min": 1086.6,
+   "cost_min": 5083.5,
+   "job_wait_max_min": 29.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 19,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.8,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 378.6,
+   "truck_turnaround_min": 14.3,
+   "quay_crane_wait_min": 280.3,
+   "agv_km": 1974.1,
+   "end_min": 871.4,
+   "cost_min": 5013.3,
+   "job_wait_max_min": 38.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 20,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 4.4,
+   "quay_moves_per_crane_hour": 17.7,
+   "ship_turnaround_min": 703.2,
+   "truck_turnaround_min": 12.6,
+   "quay_crane_wait_min": 125.5,
+   "agv_km": 1943.0,
+   "end_min": 1603.3,
+   "cost_min": 3668.0,
+   "job_wait_max_min": 28.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 21,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.8,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 394.1,
+   "truck_turnaround_min": 15.9,
+   "quay_crane_wait_min": 236.2,
+   "agv_km": 1899.5,
+   "end_min": 821.0,
+   "cost_min": 4890.5,
+   "job_wait_max_min": 39.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 22,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 6.0,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 389.3,
+   "truck_turnaround_min": 15.4,
+   "quay_crane_wait_min": 264.6,
+   "agv_km": 1871.9,
+   "end_min": 806.6,
+   "cost_min": 5097.2,
+   "job_wait_max_min": 53.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 23,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 394.6,
+   "truck_turnaround_min": 11.4,
+   "quay_crane_wait_min": 279.9,
+   "agv_km": 1826.6,
+   "end_min": 817.0,
+   "cost_min": 4958.3,
+   "job_wait_max_min": 30.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 24,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 16.0,
+   "ship_turnaround_min": 409.9,
+   "truck_turnaround_min": 13.1,
+   "quay_crane_wait_min": 300.8,
+   "agv_km": 2042.3,
+   "end_min": 825.1,
+   "cost_min": 5052.8,
+   "job_wait_max_min": 31.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 25,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.0,
+   "quay_moves_per_crane_hour": 16.4,
+   "ship_turnaround_min": 415.9,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 188.4,
+   "agv_km": 1877.6,
+   "end_min": 962.3,
+   "cost_min": 4071.3,
+   "job_wait_max_min": 31.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 26,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.1,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 381.8,
+   "truck_turnaround_min": 12.2,
+   "quay_crane_wait_min": 165.5,
+   "agv_km": 1946.8,
+   "end_min": 896.5,
+   "cost_min": 4286.8,
+   "job_wait_max_min": 27.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 27,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 15.4,
+   "ship_turnaround_min": 401.6,
+   "truck_turnaround_min": 12.5,
+   "quay_crane_wait_min": 219.5,
+   "agv_km": 1896.7,
+   "end_min": 824.2,
+   "cost_min": 4550.8,
+   "job_wait_max_min": 29.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 28,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.2,
+   "quay_moves_per_crane_hour": 16.7,
+   "ship_turnaround_min": 587.2,
+   "truck_turnaround_min": 13.8,
+   "quay_crane_wait_min": 175.2,
+   "agv_km": 1830.7,
+   "end_min": 1438.6,
+   "cost_min": 4086.7,
+   "job_wait_max_min": 49.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 29,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 406.5,
+   "truck_turnaround_min": 15.7,
+   "quay_crane_wait_min": 282.1,
+   "agv_km": 1950.8,
+   "end_min": 834.1,
+   "cost_min": 4574.2,
+   "job_wait_max_min": 28.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 30,
+   "rule": "nearest_job",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.5,
+   "ship_turnaround_min": 433.3,
+   "truck_turnaround_min": 11.1,
+   "quay_crane_wait_min": 237.2,
+   "agv_km": 1898.9,
+   "end_min": 862.1,
+   "cost_min": 4928.2,
+   "job_wait_max_min": 31.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 1,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.3,
+   "quay_moves_per_crane_hour": 16.0,
+   "ship_turnaround_min": 357.1,
+   "truck_turnaround_min": 11.8,
+   "quay_crane_wait_min": 244.6,
+   "agv_km": 1907.3,
+   "end_min": 811.7,
+   "cost_min": 4273.8,
+   "job_wait_max_min": 39.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 2,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 378.1,
+   "truck_turnaround_min": 11.5,
+   "quay_crane_wait_min": 308.6,
+   "agv_km": 2035.7,
+   "end_min": 821.5,
+   "cost_min": 5240.5,
+   "job_wait_max_min": 40.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 3,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.1,
+   "ship_turnaround_min": 408.2,
+   "truck_turnaround_min": 14.5,
+   "quay_crane_wait_min": 264.5,
+   "agv_km": 1908.6,
+   "end_min": 839.6,
+   "cost_min": 4573.3,
+   "job_wait_max_min": 27.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 4,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 16.3,
+   "ship_turnaround_min": 452.8,
+   "truck_turnaround_min": 14.2,
+   "quay_crane_wait_min": 151.9,
+   "agv_km": 1903.3,
+   "end_min": 836.4,
+   "cost_min": 4207.0,
+   "job_wait_max_min": 45.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 5,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 6.2,
+   "quay_moves_per_crane_hour": 14.9,
+   "ship_turnaround_min": 406.6,
+   "truck_turnaround_min": 14.6,
+   "quay_crane_wait_min": 191.2,
+   "agv_km": 1810.2,
+   "end_min": 824.2,
+   "cost_min": 4776.3,
+   "job_wait_max_min": 51.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 6,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.0,
+   "quay_moves_per_crane_hour": 16.3,
+   "ship_turnaround_min": 531.0,
+   "truck_turnaround_min": 11.4,
+   "quay_crane_wait_min": 175.0,
+   "agv_km": 2057.0,
+   "end_min": 1073.3,
+   "cost_min": 4217.0,
+   "job_wait_max_min": 32.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 7,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 447.4,
+   "truck_turnaround_min": 17.0,
+   "quay_crane_wait_min": 323.4,
+   "agv_km": 2040.5,
+   "end_min": 881.7,
+   "cost_min": 5268.8,
+   "job_wait_max_min": 34.4,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 8,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 15.1,
+   "ship_turnaround_min": 369.1,
+   "truck_turnaround_min": 12.3,
+   "quay_crane_wait_min": 210.9,
+   "agv_km": 1921.6,
+   "end_min": 844.1,
+   "cost_min": 4455.2,
+   "job_wait_max_min": 44.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 9,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.1,
+   "quay_moves_per_crane_hour": 15.8,
+   "ship_turnaround_min": 504.4,
+   "truck_turnaround_min": 12.5,
+   "quay_crane_wait_min": 153.1,
+   "agv_km": 2093.3,
+   "end_min": 934.7,
+   "cost_min": 4539.8,
+   "job_wait_max_min": 46.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 10,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.3,
+   "quay_moves_per_crane_hour": 15.3,
+   "ship_turnaround_min": 366.8,
+   "truck_turnaround_min": 13.4,
+   "quay_crane_wait_min": 206.2,
+   "agv_km": 1928.2,
+   "end_min": 832.0,
+   "cost_min": 4321.5,
+   "job_wait_max_min": 33.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 11,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 455.8,
+   "truck_turnaround_min": 11.9,
+   "quay_crane_wait_min": 395.9,
+   "agv_km": 2098.3,
+   "end_min": 864.9,
+   "cost_min": 5275.3,
+   "job_wait_max_min": 31.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 12,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.0,
+   "quay_moves_per_crane_hour": 17.2,
+   "ship_turnaround_min": 445.1,
+   "truck_turnaround_min": 13.7,
+   "quay_crane_wait_min": 269.6,
+   "agv_km": 1934.5,
+   "end_min": 1083.6,
+   "cost_min": 4216.7,
+   "job_wait_max_min": 40.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 13,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 4.8,
+   "quay_moves_per_crane_hour": 16.8,
+   "ship_turnaround_min": 437.9,
+   "truck_turnaround_min": 11.9,
+   "quay_crane_wait_min": 149.9,
+   "agv_km": 2009.3,
+   "end_min": 899.6,
+   "cost_min": 4055.5,
+   "job_wait_max_min": 26.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 14,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 6.3,
+   "quay_moves_per_crane_hour": 15.4,
+   "ship_turnaround_min": 446.4,
+   "truck_turnaround_min": 12.0,
+   "quay_crane_wait_min": 428.6,
+   "agv_km": 2150.3,
+   "end_min": 857.1,
+   "cost_min": 5717.2,
+   "job_wait_max_min": 27.5,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 15,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 14.7,
+   "ship_turnaround_min": 448.6,
+   "truck_turnaround_min": 15.1,
+   "quay_crane_wait_min": 324.2,
+   "agv_km": 2037.4,
+   "end_min": 898.5,
+   "cost_min": 5083.7,
+   "job_wait_max_min": 44.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 16,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 382.7,
+   "truck_turnaround_min": 15.8,
+   "quay_crane_wait_min": 272.0,
+   "agv_km": 2013.6,
+   "end_min": 851.7,
+   "cost_min": 4776.3,
+   "job_wait_max_min": 42.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 17,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 16.1,
+   "ship_turnaround_min": 399.7,
+   "truck_turnaround_min": 14.6,
+   "quay_crane_wait_min": 318.5,
+   "agv_km": 2060.2,
+   "end_min": 816.7,
+   "cost_min": 4872.3,
+   "job_wait_max_min": 27.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 18,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.6,
+   "ship_turnaround_min": 545.0,
+   "truck_turnaround_min": 11.7,
+   "quay_crane_wait_min": 374.8,
+   "agv_km": 1980.0,
+   "end_min": 1083.3,
+   "cost_min": 4986.7,
+   "job_wait_max_min": 32.6,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 19,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 381.2,
+   "truck_turnaround_min": 14.7,
+   "quay_crane_wait_min": 267.7,
+   "agv_km": 2056.7,
+   "end_min": 869.5,
+   "cost_min": 4966.5,
+   "job_wait_max_min": 32.7,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 20,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 4.4,
+   "quay_moves_per_crane_hour": 17.9,
+   "ship_turnaround_min": 700.8,
+   "truck_turnaround_min": 12.6,
+   "quay_crane_wait_min": 100.9,
+   "agv_km": 1939.6,
+   "end_min": 1597.7,
+   "cost_min": 3688.3,
+   "job_wait_max_min": 26.0,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 21,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.7,
+   "quay_moves_per_crane_hour": 15.4,
+   "ship_turnaround_min": 391.2,
+   "truck_turnaround_min": 16.3,
+   "quay_crane_wait_min": 235.9,
+   "agv_km": 1977.8,
+   "end_min": 823.6,
+   "cost_min": 4761.5,
+   "job_wait_max_min": 46.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 22,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 378.8,
+   "truck_turnaround_min": 14.3,
+   "quay_crane_wait_min": 292.9,
+   "agv_km": 1954.5,
+   "end_min": 795.1,
+   "cost_min": 5201.7,
+   "job_wait_max_min": 37.9,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 23,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 6.1,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 404.0,
+   "truck_turnaround_min": 11.7,
+   "quay_crane_wait_min": 312.5,
+   "agv_km": 1884.3,
+   "end_min": 825.2,
+   "cost_min": 4927.0,
+   "job_wait_max_min": 34.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 24,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.9,
+   "quay_moves_per_crane_hour": 15.7,
+   "ship_turnaround_min": 416.9,
+   "truck_turnaround_min": 13.3,
+   "quay_crane_wait_min": 334.5,
+   "agv_km": 2137.7,
+   "end_min": 832.3,
+   "cost_min": 5340.8,
+   "job_wait_max_min": 29.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 25,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.0,
+   "quay_moves_per_crane_hour": 16.4,
+   "ship_turnaround_min": 417.7,
+   "truck_turnaround_min": 14.1,
+   "quay_crane_wait_min": 192.5,
+   "agv_km": 1896.6,
+   "end_min": 953.5,
+   "cost_min": 4014.5,
+   "job_wait_max_min": 28.1,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 26,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.4,
+   "quay_moves_per_crane_hour": 15.6,
+   "ship_turnaround_min": 386.1,
+   "truck_turnaround_min": 13.2,
+   "quay_crane_wait_min": 162.2,
+   "agv_km": 1995.3,
+   "end_min": 895.3,
+   "cost_min": 4537.3,
+   "job_wait_max_min": 40.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 27,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 15.4,
+   "ship_turnaround_min": 402.9,
+   "truck_turnaround_min": 12.1,
+   "quay_crane_wait_min": 251.6,
+   "agv_km": 1964.7,
+   "end_min": 828.6,
+   "cost_min": 4598.0,
+   "job_wait_max_min": 22.3,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 28,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.3,
+   "quay_moves_per_crane_hour": 16.4,
+   "ship_turnaround_min": 591.1,
+   "truck_turnaround_min": 13.8,
+   "quay_crane_wait_min": 212.5,
+   "agv_km": 1861.8,
+   "end_min": 1440.3,
+   "cost_min": 4189.2,
+   "job_wait_max_min": 35.8,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 29,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.5,
+   "quay_moves_per_crane_hour": 15.9,
+   "ship_turnaround_min": 423.5,
+   "truck_turnaround_min": 15.8,
+   "quay_crane_wait_min": 285.4,
+   "agv_km": 1982.9,
+   "end_min": 851.2,
+   "cost_min": 4644.5,
+   "job_wait_max_min": 28.2,
+   "problems": 0,
+   "finished": 1
+  },
+  {
+   "seed": 30,
+   "rule": "learned",
+   "agv_wait_for_agv_min": 5.6,
+   "quay_moves_per_crane_hour": 15.4,
+   "ship_turnaround_min": 439.9,
+   "truck_turnaround_min": 11.1,
+   "quay_crane_wait_min": 239.5,
+   "agv_km": 1959.1,
+   "end_min": 866.3,
+   "cost_min": 4811.8,
+   "job_wait_max_min": 28.0,
+   "problems": 0,
+   "finished": 1
+  }
+ ],
+ "seconds": 1764,
+ "jobs": 2
+}

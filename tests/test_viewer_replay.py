@@ -31,8 +31,8 @@ def replay(data):
 
 def test_the_replay_file_is_what_the_generator_writes(dames):
     built = load("tools/build_viewer_replay.py", "build_viewer_replay").build(dames)
-    assert json.dumps(built, separators=(",", ":")) + "\n" == FILE.read_text(), \
-        "viewer3d/demo-replay.json is out of date: run tools/build_viewer_replay.py"
+    same = json.dumps(built, separators=(",", ":")) + "\n" == FILE.read_text()      # compared first: pytest's diff of two long files takes minutes
+    assert same, "viewer3d/demo-replay.json is out of date: run tools/build_viewer_replay.py"
 
 
 def test_every_leg_is_legal_moves_and_starts_where_the_vehicle_is(dames, replay):
@@ -45,6 +45,21 @@ def test_every_leg_is_legal_moves_and_starts_where_the_vehicle_is(dames, replay)
             assert all(b in dames.neighbors(*a) for a, b in zip(path, path[1:])), v["id"]
             here, clock = path[-1], leg["t1"]
         assert (v["gone"] is not None) == (v["type"] == "truck")
+
+
+def test_marks_are_the_stopping_points_a_leg_passes_in_order(dames, replay):
+    from terminal_layout.timing import stopping_points
+
+    stops = stopping_points(dames)
+    marked = 0
+    for v in replay["vehicles"]:
+        for leg in v["legs"]:
+            path, marks = [tuple(p) for p in leg["path"]], leg.get("marks", [])
+            assert [i for i, _ in marks] == [i for i in range(1, len(path) - 1) if path[i] in stops], v["id"]
+            times = [leg["t0"]] + [t for _, t in marks] + [leg["t1"]]
+            assert all(a < b for a, b in zip(times, times[1:])), (v["id"], leg["t0"])
+            marked += len(marks)
+    assert marked > 400
 
 
 def test_each_container_is_always_somewhere_and_ends_where_the_run_says(replay):
@@ -60,8 +75,8 @@ def test_each_container_is_always_somewhere_and_ends_where_the_run_says(replay):
                 assert b["at"] == a["to"]
         ends[c["id"]] = phases[-1]["at"]
     assert {k: v[:2] for k, v in ends.items()} == {
-        "IMP-1": ["slot", "C2-01-01"], "IMP-2": ["slot", "C2-01-02"], "IMP-3": ["slot", "C2-02-02"],
-        "IMP-5": ["slot", "C2-02-01"], "IMP-4": ["vehicle", "TRK-A"], "EXP-1": ["ship", "QC2"]}
+        "IMP-1": ["slot", "C2-01-01"], "IMP-2": ["slot", "C2-02-01"], "IMP-3": ["slot", "C2-04-01"],
+        "IMP-5": ["slot", "C2-03-01"], "IMP-4": ["vehicle", "TRK-A"], "EXP-1": ["ship", "QC2"]}
 
 
 def test_a_container_rides_only_while_its_vehicle_drives_loaded_with_it(replay):
@@ -86,10 +101,28 @@ def test_the_lifts_are_the_ones_the_run_logged(replay):
     log = {text: t for t, text in replay["log"]}
     by_id = {c["id"]: [ph for ph in c["phases"] if "by" in ph] for c in replay["containers"]}
     assert by_id["IMP-1"][0]["by"] == "QC2" and by_id["IMP-1"][0]["t1"] == log["QC2 sets IMP-1 in its buffer (1/2)"]
-    assert by_id["IMP-1"][-1]["by"] == "RTG2" and by_id["IMP-1"][-1]["t1"] == log["yard crane stacks IMP-1 in C2-01-01"]
+    assert by_id["IMP-1"][-1]["by"] == "RTG2" and by_id["IMP-1"][-1]["t1"] == log["RTG2 stacks IMP-1 in C2-01-01"]
     assert by_id["IMP-4"][-1]["by"] == "XC1" and by_id["IMP-4"][-1]["t1"] == log["XC1 loads IMP-4 onto TRK-A"]
-    assert by_id["EXP-1"][0]["by"] == "XC1" and by_id["EXP-1"][-1]["t1"] == log["QC2 loads EXP-1 onto the ship"] == replay["t_end"]
-    assert [ph["by"] for ph in by_id["IMP-2"]] == ["QC2", None, None, "RTG2"]      # crane, handoff on, handoff off, crane
+    assert by_id["EXP-1"][0]["by"] == "XC1" and by_id["EXP-1"][-1]["t1"] == log["QC2 loads EXP-1 onto the ship"]
+    assert replay["t_end"] == max(t for t, _ in replay["log"])
+    # into the buffer, onto the AGV, off the AGV into the stack: a crane each time
+    assert [(ph["by"], ph["from"][0], ph["to"][0]) for ph in by_id["IMP-2"]] == [
+        ("QC2", "ship", "ground"), ("QC2", "ground", "vehicle"), ("RTG2", "vehicle", "slot")]
+    # straight onto the AGV that was waiting, then straight onto the truck: never on the ground
+    assert [(ph["by"], ph["from"][0], ph["to"]) for ph in by_id["IMP-4"]] == [
+        ("QC3", "ship", ["vehicle", "AGV3"]), ("XC1", "vehicle", ["vehicle", "TRK-A"])]
+
+
+def test_no_crane_lifts_two_containers_at_once(replay):
+    spans = {}
+    for c in replay["containers"]:
+        for ph in c["phases"]:
+            if "by" in ph:
+                assert ph["by"], (c["id"], ph)
+                spans.setdefault(ph["by"], []).append((ph["t0"], ph["t1"]))
+    for crane, s in spans.items():
+        s.sort()
+        assert all(a[1] <= b[0] for a, b in zip(s, s[1:])), crane
 
 
 def test_the_waiting_map_is_the_stress_test_and_mostly_on_the_quay(dames, data):

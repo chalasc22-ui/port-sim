@@ -5,8 +5,14 @@ JSON by hand or re-derive the roads yourself.
 
 ```bash
 pip install -e .            # once, from the repo root
-python sim/run_demo.py      # the whole terminal running on stand-ins for every module
+python sim/run.py           # the whole terminal: ship arrival, AGVs, stacking and the gate in one run
+python tools/control_room.py   # the same run in 3D, live: change a policy, break an AGV, close a road
+python tools/preflight.py      # before showing it to anyone: is this computer ready?
 ```
+
+`docs/integration.md` says what each module in that run does, which check-in each rule came from, and
+how to put your own code in its place. Your module's file is in `sim/`: `ship_arrival.py`, `agv.py`,
+`stacking.py`, `gate.py`. Each was written from the meeting notes as a working draft, so change it freely.
 
 ```python
 from terminal_layout import load_layout
@@ -45,6 +51,8 @@ travel_time(layout, path, loaded=True, stops=stops)   # seconds, PortSim's motio
 * The AGV spots of the exchange stack (block XA) are on row 1, which also carries AGVs heading west to
   the inbound road, so an AGV being served there blocks the row behind it.
 * `examples/agv_stub.py` is a whole job using only `neighbors()`. Swap its `route()` for your router.
+* `sim/agv.py` is a full draft of the module: segment reservation so vehicles never share a cell, three
+  dispatch rules, battery and charging. In the integrated run every AGV has a home charger.
 
 ## Container stacking
 
@@ -57,7 +65,8 @@ layout.transfer_point_for("C2-03-02")      # where an AGV stands for that slot's
 layout.yard_cranes["RTG2"].blocks          # the blocks each yard crane serves (RTG1 to RTG6; XC1 is the exchange crane)
 ```
 
-`sim/modules.py` has a `Stacking` stand-in with `place(container)` and `retrieve(container)`; replace it.
+`sim/stacking.py` is a full draft of the module: `shortest_stack` and `departure_time`, rehandles, and
+food kept apart from hazardous cargo. The bays a run uses are `ZONES` in `sim/scenario.py`.
 
 ## Ship arrival
 
@@ -66,8 +75,10 @@ layout.berths                              # B1 (QC1 to QC3) and B2 (QC4 to QC6)
 layout.quay_cranes["QC4"]                  # berth, x, transfer lanes, buffer_capacity (2)
 ```
 
-A quay crane's buffer holds 2 containers. When it is full, the crane waits for an AGV; `sim/run_demo.py`
-shows QC2 doing that.
+A quay crane's buffer holds 2 containers. A crane lowers a container straight onto an AGV that is standing
+in its lane and uses the buffer only when no AGV is there. When the buffer is full the crane waits for an
+AGV; QC2 shows that in `python sim/run.py`. `sim/ship_arrival.py` is a full draft of the module: the
+anchorage, the tide, the channel, two berths, `fcfs` and `earliest_eligible`.
 
 ## Gate
 
@@ -82,7 +93,8 @@ out. They share the roads by the gate with AGVs: the column x = 80, the south ro
 column x = 88 and row 1. The
 exchange crane XC1 lifts containers between the truck side and the AGV side. The truck spots are one
 lane, so trucks pull forward and leave in order. This zone is a proposal: tell me if trucks should
-wait somewhere else or need more spots.
+wait somewhere else or need more spots. `sim/gate.py` is a full draft of the module: `fifo` and
+`appointment`, the checks in and out, the trouble desk and a holding area (none of them on the map yet).
 
 ## Other files you may want
 
@@ -91,8 +103,15 @@ wait somewhere else or need more spots.
 | `layouts/dames-point.compiled.json` | the map as plain JSON, if you are not using Python |
 | `layouts/dames-point.graph.json` | the roads as stopping points and segments, with lengths and times |
 | `layouts/variants/` | the same terminal with two-way roads, or with one aisle removed |
-| `viewer3d/dames-point-3d.html` | the 3D model: open it by double-click. It plays `sim/run_demo.py`, plans routes, closes roads and has a guided tour for presenting |
-| `tools/build_viewer_replay.py` | writes the run the 3D model plays (`viewer3d/demo-replay.json`); its docstring is the file format, so your module's event log can be played the same way |
+| `viewer3d/dames-point-3d.html` | the 3D model: open it by double-click. It plays the integrated run (`sim/run.py`) with a dashboard under it, says why each thing was sent, stacked or held when you click it, plans routes, closes roads and has a guided tour for presenting. It needs no internet |
+| `tools/build_viewer_replay.py` | writes the run the 3D model plays (`viewer3d/terminal-replay.json`); its docstring is the file format |
+| `tools/experiments.py`, `docs/experiments.md` | every module's policies, the fleet size and the truck volume compared on the same workloads, 30 runs each with confidence intervals; `docs/experiments.csv` has every run |
+| `tools/learned_dispatch.py`, `docs/learned-dispatch.md` | a dispatch rule learned by Q-learning in the simulator (the AGV owner's idea), tested against the others on the experiment's 30 shifts: the method, the numbers, the limits |
+| `sim/params.py`, `docs/data-sheet.md` | every number the simulation runs on, with its source: PortSim's set and a set of published ones |
+| `docs/validation.md` | a shift at real scale (`python sim/run.py --shift 1`) against published figures, and where the model is off |
+| `tools/control_room.py`, `sim/control.py` | the live 3D control room, and the settings a what-if run takes |
+| `tools/preflight.py`, `docs/demo-script.md` | before showing it: a check that a computer is ready, and the script for the symposium table |
+| `sim/run_demo.py`, `sim/modules.py` | the earlier six-container walkthrough on one-line stand-ins; still runs, no longer what the viewer plays |
 | `CHANGELOG.md` | what changed in each version of the map |
 
 Questions or a change you need: message Christopher, or open an issue on the repo.

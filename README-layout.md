@@ -13,7 +13,7 @@ Python 3.11+. Depends on `pydantic`, `networkx` and `matplotlib` (plus `pytest` 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-pytest                             # 239 tests, a few seconds
+pytest                             # 441 tests, about two minutes
 python examples/demo.py            # prints a tour and writes layout.png
 ```
 
@@ -167,9 +167,17 @@ python tools/build_dames_point.py
 ## Start here if you are on another module
 
 `docs/quickstart.md` has the few calls each module needs, and `CHANGELOG.md` says what changed in each
-version. `python sim/run_demo.py` runs one ship, five imports, one export and two trucks end to end,
-with a stand-in for every module (`sim/modules.py`): replace yours. QC2's buffer fills, so it waits
-for an AGV: a full buffer takes no more containers, the constraint Dr. Wang described on Oct 15.
+version. `python sim/run.py` runs the whole terminal: three ships, 12 AGVs, the yard and 15 trucks at the
+gate, with a working draft of every module written from the check-in notes (`sim/ship_arrival.py`,
+`sim/agv.py`, `sim/stacking.py`, `sim/gate.py`) and a scheduler that joins them (`sim/terminal.py`).
+`docs/integration.md` lists each module's rules, where they came from, what was assumed, and how to
+replace a module with your own. `python tools/control_room.py` opens the same run in 3D with the
+simulator behind it: change the fleet or a policy, break an AGV down or close a road, and the morning is
+simulated again from that moment. `python tools/preflight.py` checks that a computer is ready to show it,
+and `docs/demo-script.md` is the script for the symposium table. A crane lifts straight to or from an AGV that is standing in its lane
+and uses its buffer only when none is there. QC2's buffer fills, so it waits for an AGV: a full buffer
+takes no more containers, the constraint Dr. Wang described on Oct 15. (`python sim/run_demo.py` is the
+earlier six-container walkthrough on one-line stand-ins.)
 
 ## Truck exchange zone
 
@@ -217,8 +225,11 @@ vehicle is loaded, and the router is one function to replace.
 ## 3D viewer
 
 `viewer3d/index.html` draws Dames Point in 3D with Three.js, from the compiled JSON only: stacked yard
-slots, the six quay cranes, six RTGs and the exchange crane, both charging depots, lane arrows, and a
-few demo vehicles.
+slots, the six quay cranes, six RTGs and the exchange crane, both charging depots and lane arrows. It
+plays the integrated run (`viewer3d/terminal-replay.json`, from `tools/build_viewer_replay.py`): ships,
+cranes, AGVs with their battery, trucks and every container, with a timeline and a guided tour. A
+dashboard under the view follows the run (tiles, four charts, the modules' decisions, a table), and the
+card of anything you click ends with why it was sent, stacked, held or let in (`docs/integration.md`).
 Drag to orbit, scroll to zoom, click a cell to read it, and use the panel to fly to a crane or depot,
 change the example yard fill, or toggle layers. `window.portViewer.cellCenter(x, y)` gives a cell's 3D
 centre for anything drawn on top.
@@ -227,6 +238,17 @@ centre for anything drawn on top.
 python -m http.server            # from the repo root, then open http://localhost:8000/viewer3d/
 python tools/bundle_viewer.py    # or: one self-contained file, viewer3d/dames-point-3d.html
 ```
+
+The one file needs no internet: Three.js and the page's typefaces are inside it, copied from
+`viewer3d/vendor/` (their licences are beside them). Add `#tour` to its address and the guided tour starts
+by itself and keeps looping, for a screen left running.
+
+The picture is drawn to be read as a place: a sky that lights the scene and is mirrored in the water, shadows,
+machines in detail with their numbers on them, and floodlights after dark (the **Time of day** slider). What
+stands round the terminal is scenery, drawn by eye and not from data: the bridge downriver, the woods, the far
+bank, the ships' shapes. **Picture quality** under View is on Automatic: when frames run slow for a few
+seconds the page draws fewer pixels and smaller shadows; Full, Balanced and Light choose by hand
+(`window.portViewer.setQuality("auto" | 0 to 4)`).
 
 The demo vehicles follow `viewer3d/demo-routes.json`, written by `tools/build_viewer_routes.py` from
 `Layout.shortest_path`; a test checks every step is a legal move. They are examples, not traffic: no
@@ -299,14 +321,28 @@ terminal_layout/
 layouts/        demo-12x8.json, dames-point.json, their compiled forms, the road graph, dames-point-trace.png,
                 variants/ (two-way roads, one aisle removed)
 tools/          build_dames_point.py (writes the Dames Point files), charger_siting.py (p-median depot siting),
-                export_graph.py, build_road_variants.py, fleet_stress.py,
-                build_viewer_routes.py and bundle_viewer.py (the 3D viewer)
-sim/            run_demo.py and modules.py: the whole terminal on stand-ins for the other modules
-tests/          239 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2,
-                the exports, the demo and the stress test
+                export_graph.py, build_road_variants.py, fleet_stress.py, experiments.py (policies, fleet size and
+                truck volume on matched workloads, 30 runs each), data_sheet.py (writes the data sheet, the
+                experiment's tables and the validation), learned_dispatch.py (trains a dispatch rule by Q-learning in the
+                simulator, tests it and writes it up), control_room.py (the live 3D control room), preflight.py (is this
+                computer ready to show it?), build_viewer_routes.py, build_viewer_replay.py and bundle_viewer.py
+                (the 3D viewer)
+sim/            the integrated terminal: run.py, terminal.py (the scheduler), ship_arrival.py, agv.py, stacking.py,
+                gate.py, kernel.py, scenario.py, metrics.py, params.py (every number, with its source), control.py,
+                dispatch_learned.py and dispatch_weights.json (the dispatch rule that was learned, and its weights);
+                run_demo.py and modules.py are the earlier walkthrough
+tests/          441 tests: every rule, the API, bad input, rendering, a 100 x 40 layout, Dames Point, schema 1.1 and 1.2,
+                the exports, the stress test, each module of the integrated terminal, whole runs, disruptions and
+                what-if runs, the numbers and their sources, a shift at real scale, the dashboard's series, the reasons
+                the modules give, the control room server, the guided tour, the preflight, the numbers the demo script
+                quotes, the dispatch rule that was learned (its training, its test and its write-up), and the
+                viewer's files
 examples/       demo.py; agv_stub.py, one vehicle driving full jobs with neighbors() alone
-docs/           layout-spec.md (the spec this was built from), quickstart.md, charger-siting.csv,
-                demo-12x8.png, dames-point.png, fleet-waiting.png
+docs/           layout-spec.md (the spec this was built from), quickstart.md, integration.md (the integrated
+                terminal and how to replace a module), demo-script.md (the script for the symposium table), data-sheet.md, experiments.md and validation.md (written
+                by tools/data_sheet.py), experiments.csv, experiments-summary.json, learned-dispatch.md with its two
+                figures and the files of numbers behind it (written by tools/learned_dispatch.py),
+                charger-siting.csv, demo-12x8.png, dames-point.png, fleet-waiting.png
 ```
 
 ## What the other modules should rely on

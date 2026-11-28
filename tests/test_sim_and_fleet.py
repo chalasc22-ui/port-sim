@@ -1,5 +1,6 @@
 """The integration demo and the fleet stress test run on the real map."""
 
+import importlib
 import importlib.util
 import sys
 from pathlib import Path
@@ -36,8 +37,90 @@ def test_a_quay_crane_waits_while_its_buffer_is_full(dames):
     log = demo.Terminal(dames).run()
     text = " | ".join(line for _, line in log)
     assert "QC2 waits: its buffer is full (2/2)" in text and "(3/2)" not in text
-    assert first(log, "QC2 waits") < first(log, "picks up IMP-1") == first(log, "QC2 goes on")
+    assert first(log, "QC2 waits") < first(log, "QC2 lifts IMP-1 from its buffer onto") == first(log, "QC2 goes on")
     assert first(log, "QC2 sets IMP-3") == first(log, "QC2 goes on") + demo.QC_CYCLE_S
+
+
+def test_a_crane_lifts_straight_onto_an_agv_that_waits_in_its_lane(dames):
+    """AGV3 starts in QC3's lane, so QC3's first container never touches the ground. Its second does:
+    by then AGV3 has left."""
+    demo = load("sim/run_demo.py", "run_demo")
+    terminal = demo.Terminal(dames)
+    assert terminal.agvs.at["AGV3"] in dames.quay_cranes["QC3"].transfer_points
+    log = terminal.run()
+    text = " | ".join(line for _, line in log)
+    assert first(log, "QC3 sets IMP-4 straight onto AGV3") == demo.QC_CYCLE_S
+    assert "QC3 sets IMP-4 in its buffer" not in text and "QC3 sets IMP-5 in its buffer (1/2)" in text
+    on_agv3 = [r for r in terminal.trace if r["kind"] == "lift" and r["what"] == "IMP-4"]
+    assert [(tuple(r["src"])[0], tuple(r["dst"])) for r in on_agv3] == [("ship", ("vehicle", "AGV3")), ("vehicle", ("vehicle", "TRK-A"))]
+
+
+def test_with_no_agv_at_the_quay_every_import_goes_through_a_buffer(dames):
+    demo = load("sim/run_demo.py", "run_demo")
+    modules = importlib.import_module("sim.modules")
+
+    class AllInTheYard(modules.AgvFleet):
+        def __init__(self, layout):
+            super().__init__(layout)
+            self.at["AGV3"] = (44, 32)
+
+    terminal = demo.Terminal(dames)
+    terminal.agvs = AllInTheYard(dames)
+    text = " | ".join(line for _, line in terminal.run())
+    assert "straight onto" not in text
+    for c in ("IMP-1", "IMP-2", "IMP-3", "IMP-4", "IMP-5"):
+        assert f"sets {c} in its buffer" in text and f"lifts {c} from its buffer onto" in text
+
+
+def test_a_crane_does_every_lift_and_one_at_a_time(dames):
+    demo = load("sim/run_demo.py", "run_demo")
+    terminal = demo.Terminal(dames)
+    terminal.run()
+    cranes = set(dames.quay_cranes) | {b.crane for b in dames.blocks.values()}
+    spans = {}
+    for r in terminal.trace:
+        if r["kind"] == "lift":
+            assert r["by"] in cranes and r["t1"] > r["t0"], r
+            spans.setdefault(r["by"], []).append((r["t0"], r["t1"]))
+    assert set(spans) == {"QC2", "QC3", "RTG2", "XC1"}
+    for crane, s in spans.items():
+        s.sort()
+        assert all(a[1] <= b[0] + 1e-9 for a, b in zip(s, s[1:])), crane
+
+
+def test_a_vehicle_stands_in_the_cranes_lane_while_it_is_lifted_to_or_from(dames):
+    """A lift onto a vehicle needs it there to the end; a lift off it needs it until the container is
+    clear (HANDOFF_S). An AGV drives away after that, while the crane finishes its move."""
+    demo = load("sim/run_demo.py", "run_demo")
+    terminal = demo.Terminal(dames)
+    terminal.run()
+    trace = terminal.trace
+    start = {r["id"]: tuple(r["at"]) for r in trace if r["kind"] == "vehicle"}
+    drives = {v: sorted((r for r in trace if r["kind"] == "drive" and r["who"] == v and len(r["path"]) > 1),
+                        key=lambda r: r["t0"]) for v in start}
+    checked = 0
+    for r in (r for r in trace if r["kind"] == "lift"):
+        for place, until in ((r["src"], r["t0"] + demo.HANDOFF_S), (r["dst"], r["t1"])):
+            if place[0] != "vehicle":
+                continue
+            v = place[1]
+            assert not [d for d in drives[v] if d["t0"] < until - 1e-9 and d["t1"] > r["t0"] + 1e-9], (r["what"], v)
+            before = [d for d in drives[v] if d["t1"] <= r["t0"] + 1e-9]
+            cell = tuple(before[-1]["path"][-1]) if before else start[v]
+            assert terminal.crane_at(cell) == r["by"], (r["what"], v, cell)
+            checked += 1
+    assert checked == 14
+
+
+def test_the_yard_crane_lifts_straight_off_the_agv(dames):
+    demo = load("sim/run_demo.py", "run_demo")
+    terminal = demo.Terminal(dames)
+    log = terminal.run()
+    stacking = [r for r in terminal.trace if r["kind"] == "lift" and tuple(r["dst"])[0] == "slot"]
+    assert len(stacking) == 4 and all(r["by"] == "RTG2" and tuple(r["src"])[0] == "vehicle" for r in stacking)
+    for r in stacking:      # the AGV is free again HANDOFF_S into the lift, before the crane has finished
+        assert r["t1"] - r["t0"] == demo.RTG_CYCLE_S
+    assert first(log, "RTG2 stacks IMP-1") == first(log, "AGV2 brings IMP-1") + demo.RTG_CYCLE_S
 
 
 def test_a_late_truck_is_loaded_only_once_it_has_parked(dames):
